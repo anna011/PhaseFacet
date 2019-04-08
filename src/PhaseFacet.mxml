@@ -44,14 +44,14 @@
 			import com.greensock.easing.*;
 			import com.greensock.plugins.*;
 			import org.osmf.events.TimeEvent;
-			TweenPlugin.activate([GlowFilterPlugin]);				//all imported packages used in program
+			TweenPlugin.activate([GlowFilterPlugin]);			//all imported packages used in program
 			
 			//VARIABLES
 			//created timers 
 			public var skipTimer:Timer=new Timer(1000,1);			//skip button timer
 			public var AnimationTimer:Timer=new Timer(50); 			//movements animation timer
 			public var AttackTimer:Timer=new Timer(50,5);			//attack animation timer
-			public var battleTimer:Timer=new Timer(10);				//monster attacking animation Timer
+			public var battleTimer:Timer=new Timer(10);			//monster attacking animation Timer
 			public var monsterTimer:Timer=new Timer(100); 			//monster following animation Timer
 			
 			//created arrays for animation
@@ -64,8 +64,8 @@
 			public var atkLeft:Array;								//ATTACK LEFT animations array
 			public var atkRight:Array;								//ATTACK RIGHT animations array
 			public var leftChest:Array;								//Left chest animations array
-			public var rightChest:Array;							//Right chest animations array
-			public var dodgeStart:Array;							//initial dodging animation array
+			public var rightChest:Array;								//Right chest animations array
+			public var dodgeStart:Array;								//initial dodging animation array
 			public var dodgeEnd:Array;								//ending dodge animation array
 			
 			//created numerical variables 
@@ -73,19 +73,19 @@
 			public var CurrentDown:uint=0;							//Default current DOWN frame
 			public var CurrentLeft:uint=0;							//Default current LEFT frame
 			public var CurrentRight:uint=0;							//Default current RIGHT frame
-			public var AttackSU:uint=0;								//Default current Skeleton ATTACK UP frame
-			public var AttackSD:uint=0;								//Default current Skeleton ATTACK DOWN frame
-			public var AttackSL:uint=0;								//Default current Skeleton ATTACK LEFT frame
-			public var AttackSR:uint=0;								//Default current Skeleton ATTACK RIGHT frame
-			public var spd:uint=15;									//movement speed
-			public var rikuDmg:uint=10;								//PROTAGONIST default damage
-			public var rikuDef:uint=5;								//PROTAGONIST default defense
-			public var bossSkeleDmg:Number=300/1000					//skele Boss default damage
+			public var AttackSU:uint=0;							//Default current Skeleton ATTACK UP frame
+			public var AttackSD:uint=0;							//Default current Skeleton ATTACK DOWN frame
+			public var AttackSL:uint=0;							//Default current Skeleton ATTACK LEFT frame
+			public var AttackSR:uint=0;							//Default current Skeleton ATTACK RIGHT frame
+			public var spd:uint=15;								//movement speed
+			public var rikuDmg:uint=10;							//PROTAGONIST default damage
+			public var rikuDef:uint=5;							//PROTAGONIST default defense
+			public var bossSkeleDmg:Number=300/1000						//skele Boss default damage
 			public var dmg:Number=60/1000;							//skele default damage
-			public var skeleDmg:Number;								//skeleton class damage
-			public var dash:uint=200;								//distance moved before ending dodge animation
-			public var rikuXcheck:int;								//PROTAGONIST x-coordinate marker
-			public var rikuYcheck:int;								//PROTAGONIST y-coordinate marker
+			public var skeleDmg:Number;							//skeleton class damage
+			public var dash:uint=200;							//distance moved before ending dodge animation
+			public var rikuXcheck:int;							//PROTAGONIST x-coordinate marker
+			public var rikuYcheck:int;							//PROTAGONIST y-coordinate marker
 			
 			//created boolean variables to track motion||animation
 			public var Attacking:Boolean=false;						//attack stop checker
@@ -97,9 +97,9 @@
 			
 			
 			//created collision groups
-			public var safeZ:CollisionGroup;						//safe zone collision group to change sound
+			public var safeZ:CollisionGroup;					//safe zone collision group to change sound
 			public var mapCollision:CollisionGroup;					//MAP walls collision
-			public var interactCollision:CollisionGroup;			//INTERACT; Doors,Chests,Objects,NPC (objects that are collided with)			
+			public var interactCollision:CollisionGroup;				//INTERACT; Doors,Chests,Objects,NPC (objects that are collided with)			
 			public var skeleCollision1:CollisionGroup;				//SKELETON 1 MOB collision
 			public var skeleCollision2:CollisionGroup;				//SKELETON 2 MOB collision
 			public var skeleCollision3:CollisionGroup;				//SKELETON 3 MOB collision
@@ -108,45 +108,45 @@
 			
 			//created string
 			public var previousState:String;						//previous screen marker
-			public var dirDodge:String;								//direction dodged in tracker
+			public var dirDodge:String;							//direction dodged in tracker
 			
 			//created audios used
-			public var bgm:SoundChannel;														//control sounds used in game
+			public var bgm:SoundChannel;									//control sounds used in game
 			public var intro:Sound = new Sound(new URLRequest('assets/intro.mp3'));				//introduction sound
 			public var map1:Sound = new Sound(new URLRequest('assets/map1.mp3'));				//sound run in map 1 and map 2
 			public var town:Sound = new Sound(new URLRequest('assets/safePlace.mp3'));			//sound used when in safe zone
-			public var map2B:Sound = new Sound(new URLRequest('assets/7 Hells Battle.mp3'));	//sound used when fighting mini boss
+			public var map2B:Sound = new Sound(new URLRequest('assets/7 Hells Battle.mp3'));		//sound used when fighting mini boss
 			public var map3:Sound = new Sound(new URLRequest('assets/map3.mp3'));				//sound run in entering map 3 out of safe zone
 			
 			//BUTTON FUNCTIONS
-			public function effectSkip(){							//Skip to MainMenu
+			public function effectSkip(){								//Skip to MainMenu
 				chgScreen('MainMenu');									//displays MainMenu screen
-				mainMenu();												//starts the MainMenu animations
+				mainMenu();											//starts the MainMenu animations
 			}
-			public function checkMMBtn(){							//signals functions to exit MainMenu to run
-				checkMM=true;											//MainMenu animations are done
+			public function checkMMBtn(){								//signals functions to exit MainMenu to run
+				checkMM=true;										//MainMenu animations are done
 			}
-			public function mainMenu(){																		//MainMenu button animations
-				if (checkMM==false){																			//if main menu animations is still running...
-					TweenMax.fromTo(pfLogo, 5, {glowFilter:{remove:true}}, 											//the Phase Fact LOGO glows
+			public function mainMenu(){												//MainMenu button animations
+				if (checkMM==false){													//if main menu animations is still running...
+					TweenMax.fromTo(pfLogo, 5, {glowFilter:{remove:true}}, 									//the Phase Fact LOGO glows
 						{glowFilter:{color:0x990000, alpha:0.5, blurX:30, blurY:30, strength:3, quality:3}, 
 						ease:Bounce.easeOut});
-					TweenMax.from(startBtn, 2, {x:-stage.width, ease:Bounce.easeOut});								//the Start button transitions in
-					TweenMax.from(creditBtn, 2, {x:-stage.width, ease:Bounce.easeOut});								//the Credits button transitions in
-					TweenMax.from(InstrucBtn, 2, {x:stage.width, ease:Bounce.easeOut, onComplete:checkMMBtn});		//the Instuction button transitions in
+					TweenMax.from(startBtn, 2, {x:-stage.width, ease:Bounce.easeOut});							//the Start button transitions in
+					TweenMax.from(creditBtn, 2, {x:-stage.width, ease:Bounce.easeOut});							//the Credits button transitions in
+					TweenMax.from(InstrucBtn, 2, {x:stage.width, ease:Bounce.easeOut, onComplete:checkMMBtn});				//the Instuction button transitions in
 				}
 			}
-			public function startGame(){																						//STARTS GAME
-				if (checkMM==true){																									//if main menu animation is done...
-					checkMM=false;																										//reset checker that tracks the animation
-					stopbgm();																											//stop the introduction sound
-					playbgm(map1);																										//play map 1 sound
-					chgScreen('Map1');																									//change screen to map 1
-					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);														//start listening for key presses
-					stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);															//start listening for key releases
-					chestL.frames=[chestL0, chestL1, chestL2];																			//frames of opening chests
-					chestR.frames=[chestR0, chestR1, chestR2];														
-					skeleton1.Right=[skeleR0, skeleR1, skeleR2, skeleR3, skeleR4, skeleR5, skeleR6];									//movement frames of monsters
+			public function startGame(){												//STARTS GAME
+				if (checkMM==true){													//if main menu animation is done...
+					checkMM=false;														//reset checker that tracks the animation
+					stopbgm();														//stop the introduction sound
+					playbgm(map1);														//play map 1 sound
+					chgScreen('Map1');													//change screen to map 1
+					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);								//start listening for key presses
+					stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);								//start listening for key releases
+					chestL.frames=[chestL0, chestL1, chestL2];										//frames of opening chests
+					chestR.frames=[chestR0, chestR1, chestR2];												
+					skeleton1.Right=[skeleR0, skeleR1, skeleR2, skeleR3, skeleR4, skeleR5, skeleR6];					//movement frames of monsters
 					skeleton1.Left=[skeleL0, skeleL1, skeleL2, skeleL3, skeleL4, skeleL5, skeleL6];
 					skeleton1.Up=[skeleU0, skeleU1, skeleU2, skeleU3, skeleU4, skeleU5, skeleU6];
 					skeleton1.Down=[skeleD0, skeleD1, skeleD2, skeleD3, skeleD4, skeleD5, skeleD6];
@@ -166,22 +166,22 @@
 					skeletonBoss.Left=[skeleBL0, skeleBL1, skeleBL2, skeleBL3, skeleBL4, skeleBL5, skeleBL6];
 					skeletonBoss.Up=[skeleBU0, skeleBU1, skeleBU2, skeleBU3, skeleBU4, skeleBU5, skeleBU6];
 					skeletonBoss.Down=[skeleBD0, skeleBD1, skeleBD2, skeleBD3, skeleBD4, skeleBD5, skeleBD6];
-					AnimationTimer.start();																								//start timer for riku movement animation
-					mvUp=[rikuU0, rikuU1, rikuU2, rikuU3, rikuU4, rikuU5, rikuU6, rikuU7, rikuU8];										//movement frames of riku
+					AnimationTimer.start();													//start timer for riku movement animation
+					mvUp=[rikuU0, rikuU1, rikuU2, rikuU3, rikuU4, rikuU5, rikuU6, rikuU7, rikuU8];						//movement frames of riku
 					mvDown=[rikuD0, rikuD1, rikuD2, rikuD3, rikuD4, rikuD5, rikuD6, rikuD7, rikuD8];
 					mvLeft=[rikuL0, rikuL8, rikuL7, rikuL6, rikuL5, rikuL4, rikuL3, rikuL2, rikuL1];
 					mvRight=[rikuR0, rikuR1, rikuR2, rikuR3, rikuR4, rikuR5, rikuR6, rikuR7, rikuR8];
 					atkDown=[rikuAD1, rikuAD2, rikuAD3, rikuAD4, rikuAD5];
-					atkUp=[rikuAU1, rikuAU2, rikuAU3, rikuAU4, rikuAU5];																//attacking frames of riku
+					atkUp=[rikuAU1, rikuAU2, rikuAU3, rikuAU4, rikuAU5];									//attacking frames of riku
 					atkLeft=[rikuAL1, rikuAL2, rikuAL3, rikuAL4, rikuAL5];
 					atkRight=[rikuAR1, rikuAR2, rikuAR3, rikuAR4, rikuAR5];
-					skeleCollision1 = new CollisionGroup(riku, collDetect1);															//collision groups for fighting between riku && monster
+					skeleCollision1 = new CollisionGroup(riku, collDetect1);								//collision groups for fighting between riku && monster
 					skeleCollision2 = new CollisionGroup(riku, collDetect2);
 					skeleCollision3 = new CollisionGroup(riku, collDetect3);
 					skeleCollision4 = new CollisionGroup(riku, collDetect4);
-					mapCollision = new CollisionGroup(riku, noWalk);																	//collision group for riku and no walking area
-					interactCollision = new CollisionGroup(riku, chestL, chestR, exit);													//collision group for opening chests and exiting map
-					skeleton1.AtkDown=[skeleSD0, skeleSD1, skeleSD2, skeleSD3, skeleSD4, skeleSD5, skeleSD6, skeleSD7];					//attacking frames of monsters
+					mapCollision = new CollisionGroup(riku, noWalk);									//collision group for riku and no walking area
+					interactCollision = new CollisionGroup(riku, chestL, chestR, exit);							//collision group for opening chests and exiting map
+					skeleton1.AtkDown=[skeleSD0, skeleSD1, skeleSD2, skeleSD3, skeleSD4, skeleSD5, skeleSD6, skeleSD7];			//attacking frames of monsters
 					skeleton1.AtkUp=[skeleSU0, skeleSU1, skeleSU2, skeleSU3, skeleSU4, skeleSU5, skeleSU6, skeleSU7];
 					skeleton1.AtkLeft=[skeleSL0, skeleSL1, skeleSL2, skeleSL3, skeleSL4, skeleSL5, skeleSL6, skeleSL7];
 					skeleton1.AtkRight=[skeleSR0, skeleSR1, skeleSR2, skeleSR3, skeleSR4, skeleSR5, skeleSR6, skeleSR7];
@@ -201,203 +201,203 @@
 					skeletonBoss.AtkUp=[skeleBSU0, skeleBSU1, skeleBSU2, skeleBSU3, skeleBSU4, skeleBSU5, skeleBSU6, skeleBSU7];
 					skeletonBoss.AtkLeft=[skeleBSL0, skeleBSL1, skeleBSL2, skeleBSL3, skeleBSL4, skeleBSL5, skeleBSL6, skeleBSL7];
 					skeletonBoss.AtkRight=[skeleBSR0, skeleBSR1, skeleBSR2, skeleBSR3, skeleBSR4, skeleBSR5, skeleBSR6, skeleBSR7];
-					battleTimer.addEventListener(TimerEvent.TIMER, enemiesAtk);															//start listening for timer to check if monster should attack riku
-					battleTimer.start();																								//start monster attacking timer
-					monsterTimer.addEventListener(TimerEvent.TIMER, monstersFollow);													//start listening for timer to check if monster should follow riku
-					monsterTimer.start();																								//start monster following timer
-					dodgeStart=[dodge1, dodge2];																						//frames to make riku dodge
+					battleTimer.addEventListener(TimerEvent.TIMER, enemiesAtk);								//start listening for timer to check if monster should attack riku
+					battleTimer.start();													//start monster attacking timer
+					monsterTimer.addEventListener(TimerEvent.TIMER, monstersFollow);							//start listening for timer to check if monster should follow riku
+					monsterTimer.start();													//start monster following timer
+					dodgeStart=[dodge1, dodge2];												//frames to make riku dodge
 					dodgeEnd=[dodge2, dodge2, dodge1];
 					TweenMax.resumeAll(true);
 					skeleDmg=dmg;
 				}
 			}
 			public function startIns(){								//go to INSTRUCTIONS
-				if (checkMM==true){										//if MainMenu buttons animations finishes...
+				if (checkMM==true){									//if MainMenu buttons animations finishes...
 					chgScreen('Instructions');								//can go to Instructions
 				}
 			}
-			public function startCred(){							//go to CREDITS
-				if (checkMM==true){										//if MainMenu buttons animations finishes...
+			public function startCred(){								//go to CREDITS
+				if (checkMM==true){									//if MainMenu buttons animations finishes...
 					chgScreen('Credits');									//can go to Credits
 				}
 			}
-			public function pause(){													//PAUSE GAME FUNCTION
-				pausePage.alpha=1;															//Pause Page appears
-				pausePage.horizontalCenter=0;												//Pause Page moves to the middle of the screen
+			public function pause(){								//PAUSE GAME FUNCTION
+				pausePage.alpha=1;									//Pause Page appears
+				pausePage.horizontalCenter=0;								//Pause Page moves to the middle of the screen
 				stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);			//unlistens to the Key Down Keyboard Event for keyDownControl
 				stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);				//unlistens to the Key Up Keyboard Event for keyUpControl
-				TweenMax.killAll(true, true, true);											//kills all Tweens
+				TweenMax.killAll(true, true, true);							//kills all Tweens
 			}
-			public function inventory(){												//OPENS UP INVENTORY BOX
-				invtPage.alpha=1;															//Inventory Page appears
-				invtPage.horizontalCenter=0;												//Inventory Page moves to the middle of the screen
+			public function inventory(){								//OPENS UP INVENTORY BOX
+				invtPage.alpha=1;									//Inventory Page appears
+				invtPage.horizontalCenter=0;								//Inventory Page moves to the middle of the screen
 			}
-			public function resumeGame(){												//RESUME GAME FUNCTION
-				pausePage.alpha=0;															//Pause Page disappears
-				TweenMax.resumeAll(true, true, true);										//resumes all Tweens
+			public function resumeGame(){								//RESUME GAME FUNCTION
+				pausePage.alpha=0;									//Pause Page disappears
+				TweenMax.resumeAll(true, true, true);							//resumes all Tweens
 				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//listens to the Key Down Keyboard Event for keyDownControl
-				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//listens to the Key Up Keyboard Event for keyUpControl
-				pausePage.horizontalCenter=-955;											//moves the Pause Page outside of the screen
-				map.x=rikuXcheck;															//moves the PROTAGONIST to the marked x-coordinates
-				map.y=rikuYcheck;															//moves the PROTAGONIST to the marked y-coordinates
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);				//listens to the Key Up Keyboard Event for keyUpControl
+				pausePage.horizontalCenter=-955;							//moves the Pause Page outside of the screen
+				map.x=rikuXcheck;									//moves the PROTAGONIST to the marked x-coordinates
+				map.y=rikuYcheck;									//moves the PROTAGONIST to the marked y-coordinates
 			}
-			public function shopsReturn(){												//return from SKILLS page to map
-				currentState=previousState;													//transitions the current Screen to the previous State
-				map.x=rikuXcheck;															//moves the PROTAGONIST to the marked x-coordinates
-				map.y=rikuYcheck;															//moves the PROTAGONIST to the marked y-coordinates
+			public function shopsReturn(){								//return from SKILLS page to map
+				currentState=previousState;								//transitions the current Screen to the previous State
+				map.x=rikuXcheck;									//moves the PROTAGONIST to the marked x-coordinates
+				map.y=rikuYcheck;									//moves the PROTAGONIST to the marked y-coordinates
 				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//can press key again
-				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//allows keyUp events
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);				//allows keyUp events
 			}
 			
 			//MISCELLANEOUS
 			public function playbgm(sound:Sound){					//plays selected sound
-				bgm=sound.play(0, 100);									//plays background music repeatedly	
+				bgm=sound.play(0, 100);							//plays background music repeatedly	
 			}
-			public function stopbgm(){								//stops sound played
-				bgm.stop();												//stops background music
+			public function stopbgm(){						//stops sound played
+				bgm.stop();								//stops background music
 			}
 			public function chgScreen(screen:String){				//change Screens/Maps
-				currentState=screen;									//changes state
+				currentState=screen;							//changes state
 			}
-			public function gameIntro(){															//introduction story animations
-				var para1=[w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, 			//text on storyline
+			public function gameIntro(){								//introduction story animations
+				var para1=[w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, 		//text on storyline
 					w16, w17, w18, w19, w20, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, 
 					w31, w32, w33, w34, w35, w36, w37, w38, w39, w40, w41, w42, w43, w44, w45,
 					w46, w47, w48, w49, w50, w51, w52, w53, w54, w55, w56, w57, w58, w59, w60, 
 					w61, w62, w63, w64, w65, w66, w67, w68, w69, w70, w71, w72, w73, w74, w75,
 					w76, w77, w78];																		
-				TweenMax.staggerFrom(para1, 1, {y:-stage.height}, 0.2);									//makes text animate onto screen
-				TweenMax.to(wallP, 20, {alpha:1});														//slowly makes background appear
-				story();																				//calls function to skip introduction
-				playbgm(intro);																			//plays the intro song for introduction
+				TweenMax.staggerFrom(para1, 1, {y:-stage.height}, 0.2);					//makes text animate onto screen
+				TweenMax.to(wallP, 20, {alpha:1});							//slowly makes background appear
+				story();										//calls function to skip introduction
+				playbgm(intro);										//plays the intro song for introduction
 			}
-			public function story(){											//triggers the skip timer
-				skipTimer.addEventListener(TimerEvent.TIMER, visibSkip);			//listens to timer beeps and calls a function
-				skipTimer.start();													//starts timer that makes skip button appear
+			public function story(){								//triggers the skip timer
+				skipTimer.addEventListener(TimerEvent.TIMER, visibSkip);				//listens to timer beeps and calls a function
+				skipTimer.start();									//starts timer that makes skip button appear
 			}
-			public function visibSkip(evt:TimerEvent){				//makes skip button visible
-				TweenMax.to(skipBtn, 1, {alpha:1});						//skip button appears
+			public function visibSkip(evt:TimerEvent){						//makes skip button visible
+				TweenMax.to(skipBtn, 1, {alpha:1});							//skip button appears
 				skipBtn.enabled=true;									//skip button is enabled and clickable
-				skipTimer.stop();										//stops the skip timer
+				skipTimer.stop();									//stops the skip timer
 			}
 			public function rikuDie(){								//for when PROTAGONIST dies
 				if (healthBar.scaleX<=0){								//if the health reaches 0...
 					chgScreen('GameOver');									//displays Game Over screen
 				}
 			}
-			public function mobDie(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){			//Monster death
-				if (mob.health<=rikuDmg){																	//if mob's health reaches 0
-					mob.alpha=0;																				//mob becomes invisible
-					mobColl.removeItem(mobCollDetect);															//removes the PROTAGONIST detector from the collision group
-					mob.x=0;																					//TO AVOID hitTestPoint from still functioning
-					mob.y=0;																					//TO AVOID hitTestPoint from still functioning
-					curr.text=String(Number(curr.text)+mob.gold);												//adds up coins in inventory
-					currInShop.text=String(Number(currInShop.text)+mob.gold);									//adds up coins in shop
-					expPoints.text=String(Math.round(Number(expPoints.text)+(Math.random()+20*1.5)));			//updates and adds experience
-					if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==100){				//if experience is equal to experience to move to next level && the requirement is 100...
-						rikuLvl.text="2";																			//make riku level 2
-						maxExp.text="200";																			//extend experience required to 200 for next level
-						expPoints.text="0";																			//current experience points reset to 0
-						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
-						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
-						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+			public function mobDie(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){		//Monster death
+				if (mob.health<=rikuDmg){									//if mob's health reaches 0
+					mob.alpha=0;											//mob becomes invisible
+					mobColl.removeItem(mobCollDetect);								//removes the PROTAGONIST detector from the collision group
+					mob.x=0;											//TO AVOID hitTestPoint from still functioning
+					mob.y=0;											//TO AVOID hitTestPoint from still functioning
+					curr.text=String(Number(curr.text)+mob.gold);							//adds up coins in inventory
+					currInShop.text=String(Number(currInShop.text)+mob.gold);					//adds up coins in shop
+					expPoints.text=String(Math.round(Number(expPoints.text)+(Math.random()+20*1.5)));		//updates and adds experience
+					if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==100){			//if experience is equal to experience to move to next level && the requirement is 100...
+						rikuLvl.text="2";										//make riku level 2
+						maxExp.text="200";										//extend experience required to 200 for next level
+						expPoints.text="0";										//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});								//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});								//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});								//stamina is full again
 					} else if (Number(expPoints.text)>=Number(maxExp.text) && Number(maxExp.text)==200){		//else if experience is equal to experience to move to next level && the requirement is 200...
-						rikuLvl.text="3";																			//make riku level 3
-						maxExp.text="400";																			//extend experience required to 400 for next level
-						expPoints.text="0";																			//current experience points reset to 0
-						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
-						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
-						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
-					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==400){			//else if experience is equal to experience to move to next level && the requirement is 400...
-						rikuLvl.text="4";																			//make riku level 4
-						maxExp.text="600";																			//extend experience required to 600 for next level
-						expPoints.text="0";																			//current experience points reset to 0
-						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
-						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
-						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
-					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==600){			//else if experience is equal to experience to move to next level && the requirement is 600...
-						rikuLvl.text="5";																			//make riku level 5
-						maxExp.text="800";																			//extend experience required to 800 for next level
-						expPoints.text="0";																			//current experience points reset to 0
-						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
-						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
-						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
-					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==800){			//else if experience is equal to experience to move to next level && the requirement is 800...
-						rikuLvl.text="6";																			//make riku level 6
-						maxExp.text="1000";																			//extend experience required to 1000 for next level
-						expPoints.text="0";																			//current experience points reset to 0
-						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
-						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
-						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+						rikuLvl.text="3";										//make riku level 3
+						maxExp.text="400";										//extend experience required to 400 for next level
+						expPoints.text="0";										//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});								//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});								//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});								//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==400){		//else if experience is equal to experience to move to next level && the requirement is 400...
+						rikuLvl.text="4";										//make riku level 4
+						maxExp.text="600";										//extend experience required to 600 for next level
+						expPoints.text="0";										//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});								//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});								//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});								//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==600){		//else if experience is equal to experience to move to next level && the requirement is 600...
+						rikuLvl.text="5";										//make riku level 5
+						maxExp.text="800";										//extend experience required to 800 for next level
+						expPoints.text="0";										//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});								//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});								//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});								//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==800){		//else if experience is equal to experience to move to next level && the requirement is 800...
+						rikuLvl.text="6";										//make riku level 6
+						maxExp.text="1000";										//extend experience required to 1000 for next level
+						expPoints.text="0";										//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});								//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});								//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});								//stamina is full again
 					}
 				}
 			}
-			public function mvListenerOff(){									//disables protagonist movement
+			public function mvListenerOff(){						//disables protagonist movement
 				AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);			//immediately removes listening for move down
-				AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);		//immediately removes listening for move right
+				AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);			//immediately removes listening for move right
 				AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);			//immediately removes listening for move up
 				AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);			//immediately removes listening for move left
 			}
 			
 			//BUY FUNCTIONS
 			public function buyPot(potions:Object, potionsVal:Object, value:int, 
-								   potionsValMerc:Object, slot:Object){									//Buying potions function
+								   potionsValMerc:Object, slot:Object){							//Buying potions function
 				if (curr.text<String(value) && currInShop.text<String(value) 
-					&& potionsValMerc.text>"0"){															//if player has lesser than the required amount...
+					&& potionsValMerc.text>"0"){												//if player has lesser than the required amount...
 					chefChatBox.text="Are you serious?? Not enough cash!!";										//NOT ENOUGH CASH SIR!!! 
-					curr.text="0";																				//resets current coins
-					currInShop.text="0";																		//resets current coins ( to counter negative value )
+					curr.text="0";															//resets current coins
+					currInShop.text="0";														//resets current coins ( to counter negative value )
 				}
 				if (curr.text>=String(value) && currInShop.text>=String(value) 
-					&& potionsValMerc.text>"0"){															//if potions amount in shop and the PROTAGONIST's money is more than 0...
+					&& potionsValMerc.text>"0"){												//if potions amount in shop and the PROTAGONIST's money is more than 0...
 					potionsValMerc.text=String(Number(potionsValMerc.text)-1);									//reduces the potions amount in shop
-					potionsVal.text=String(Number(potionsVal.text)+1);											//increases the potions amount in inventory
-					potionsVal.alpha=1;																			//makes the current potions amount visible
-					slot.alpha=1;																				//makes the slot visible
-					curr.text=String(Number(curr.text)-value);													//updates the currency in inventory page
+					potionsVal.text=String(Number(potionsVal.text)+1);										//increases the potions amount in inventory
+					potionsVal.alpha=1;														//makes the current potions amount visible
+					slot.alpha=1;															//makes the slot visible
+					curr.text=String(Number(curr.text)-value);											//updates the currency in inventory page
 					currInShop.text=String(Number(currInShop.text)-value);										//updates the currency in shop pages
-					shopThanks(chefChatBox);																	//Merchant expresses gratitude
-				} else if (potionsValMerc.text<='0'){														//else if the potions amount in shop is 0...
-					chefChatBox.text="Out of stock, sorry";														//merchant says out of stock
-					potions.enabled=false;																		//makes the potion in shop not available
+					shopThanks(chefChatBox);													//Merchant expresses gratitude
+				} else if (potionsValMerc.text<='0'){												//else if the potions amount in shop is 0...
+					chefChatBox.text="Out of stock, sorry";												//merchant says out of stock
+					potions.enabled=false;														//makes the potion in shop not available
 				}
 			}
-			public function buySword(weapon:String, swordDmg:uint, value:int){							//Buying weapons function
-				if (curr.text>=String(value) && currInShop.text>=String(value)){							//If current money is enough or more...
-					curr.text=String(Number(curr.text)-value);													//reduces current money in inventory Page
-					currInShop.text=String(Number(currInShop.text)-value);										//reduces current money in shop page
-					sword.alpha=1;																				//makes sword slot in equpments page visible
-					sword.source=weapon;																		//changes the current sword
-					rikuDmg=swordDmg;																			//changes riku's damage
-					atkStats.text=String(rikuDmg);																//updates riku's damage status
-					shopThanks(blacksmithChatBox);																//ARIGATOU!
+			public function buySword(weapon:String, swordDmg:uint, value:int){						//Buying weapons function
+				if (curr.text>=String(value) && currInShop.text>=String(value)){						//If current money is enough or more...
+					curr.text=String(Number(curr.text)-value);									//reduces current money in inventory Page
+					currInShop.text=String(Number(currInShop.text)-value);								//reduces current money in shop page
+					sword.alpha=1;													//makes sword slot in equpments page visible
+					sword.source=weapon;												//changes the current sword
+					rikuDmg=swordDmg;												//changes riku's damage
+					atkStats.text=String(rikuDmg);											//updates riku's damage status
+					shopThanks(blacksmithChatBox);											//ARIGATOU!
 				} else if (curr.text<String(value)&& currInShop.text<String(value)){						//else if insufficient coins...
-					blacksmithChatBox.text="Not enough coins? Aww too bad then.";								//YOU NO MONEY! GET OUTTA HERE
+					blacksmithChatBox.text="Not enough coins? Aww too bad then.";							//YOU NO MONEY! GET OUTTA HERE
 				}
 			}
 			
 			//KEYBOARD EVENTS
 			public function keyUpControl(evt:KeyboardEvent){							//Keyboard button up events
-				if (evt.keyCode==87){														//if W is released
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);					// immediately stop listening for move up
-					mvOff();																	//removes all PROTAGONIST movement frames
-					CurrentUp=0;																//resets the mvUp frame
-					mvUp[CurrentUp].alpha=1;													//makes the mvUp current frame visible again
-				} else if (evt.keyCode==83){												//else if S is released
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);					// immediately stop listening for move down
-					mvOff();																	//removes all PROTAGONIST movement frames
-					CurrentDown=0;																//resets the mvDown frame
-					mvDown[CurrentDown].alpha=1;												//makes the mvDown current frame visible again
-				} else if (evt.keyCode==65){												//else if A is released
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);					// immediately stop listening for move left
-					mvOff();																	//removes all PROTAGONIST movement frames
-					CurrentLeft=0;																//resets the mvLeft frame
-					mvLeft[CurrentLeft].alpha=1;												//makes the mvLeft current frame visible again
-				} else if (evt.keyCode==68){												//else if D is released
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);				// immediately stop listening for move right
-					mvOff();																	//removes all PROTAGONIST movement frames
-					CurrentRight=0;																//resets the mvRight frame
-					mvRight[CurrentRight].alpha=1;												//makes the mvRight current frame visible again
+				if (evt.keyCode==87){											//if W is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);						// immediately stop listening for move up
+					mvOff();												//removes all PROTAGONIST movement frames
+					CurrentUp=0;												//resets the mvUp frame
+					mvUp[CurrentUp].alpha=1;										//makes the mvUp current frame visible again
+				} else if (evt.keyCode==83){										//else if S is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);						// immediately stop listening for move down
+					mvOff();												//removes all PROTAGONIST movement frames
+					CurrentDown=0;												//resets the mvDown frame
+					mvDown[CurrentDown].alpha=1;										//makes the mvDown current frame visible again
+				} else if (evt.keyCode==65){										//else if A is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);						// immediately stop listening for move left
+					mvOff();												//removes all PROTAGONIST movement frames
+					CurrentLeft=0;												//resets the mvLeft frame
+					mvLeft[CurrentLeft].alpha=1;										//makes the mvLeft current frame visible again
+				} else if (evt.keyCode==68){										//else if D is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);						// immediately stop listening for move right
+					mvOff();												//removes all PROTAGONIST movement frames
+					CurrentRight=0;												//resets the mvRight frame
+					mvRight[CurrentRight].alpha=1;										//makes the mvRight current frame visible again
 				} else if (evt.keyCode==75){	
 					if (Attacking==false){
 						AtkAgain=false;
@@ -405,337 +405,337 @@
 				}
 			}
 			public function keyDownControl(evt:KeyboardEvent){							//Keyboard button down events
-				if (evt.keyCode==87){														//if W key is pressed
-					AnimationTimer.addEventListener(TimerEvent.TIMER, Up);						//immediately listen for move up
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);					//immediately stop listening for move down
-				} else if (evt.keyCode==65){												//else if A key is pressed
-					AnimationTimer.addEventListener(TimerEvent.TIMER, Left);					//immediately listen for move left
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);				//immediately stop listening for move right
-				} else if (evt.keyCode==83){												//else if S key is pressed
-					AnimationTimer.addEventListener(TimerEvent.TIMER, Down);					//immediately listen for move down
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);					//immediately stop listening for move up
-				} else if (evt.keyCode==68){												//else if D key is pressed
-					AnimationTimer.addEventListener(TimerEvent.TIMER, Right);					//immediately listen for move right
-					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);					//immediately stop listening for move left
-				} else if (evt.keyCode==75){												//else if K is pressed
-					if (mvDown[0].alpha==1){													//if mvDown frame is visible...
-						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
-							Attacking=true;																//set as PROTAGONIST is attacking
+				if (evt.keyCode==87){											//if W key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Up);							//immediately listen for move up
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);						//immediately stop listening for move down
+				} else if (evt.keyCode==65){										//else if A key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Left);						//immediately listen for move left
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);						//immediately stop listening for move right
+				} else if (evt.keyCode==83){										//else if S key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Down);						//immediately listen for move down
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);						//immediately stop listening for move up
+				} else if (evt.keyCode==68){										//else if D key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Right);						//immediately listen for move right
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);						//immediately stop listening for move left
+				} else if (evt.keyCode==75){										//else if K is pressed
+					if (mvDown[0].alpha==1){										//if mvDown frame is visible...
+						if (Attacking==false && AtkAgain==false){								//if PROTAGONIST is not attacking...
+							Attacking=true;												//set as PROTAGONIST is attacking
 							AtkAgain=true;
-							mvOff();																	//removes all PROTAGONIST movement frames
-							mvListenerOff();															//unlistens to the Animation Timer for the movements
-							atkDown[0].alpha=1;															//makes first PROTAGONIST attackDown frame appear
-							AttackSD=0;																	//sets the first frame
-							AttackTimer.reset();														//resets the Attack Timer
-							AttackTimer.start();														//starts the Attack Timer
-							AttackTimer.addEventListener(TimerEvent.TIMER, strikeDown);					//listens to the Attack Timer for the PROTAGONIST strikeDown
-							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							mvOff();												//removes all PROTAGONIST movement frames
+							mvListenerOff();											//unlistens to the Animation Timer for the movements
+							atkDown[0].alpha=1;											//makes first PROTAGONIST attackDown frame appear
+							AttackSD=0;												//sets the first frame
+							AttackTimer.reset();											//resets the Attack Timer
+							AttackTimer.start();											//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeDown);						//listens to the Attack Timer for the PROTAGONIST strikeDown
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);					//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
 							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
 							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
 							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
 							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
-							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);							//allows the PROTAGONIST to attack skeleton #Boss
 						}
-					} else if (mvUp[0].alpha==1){												//else if mvUp frame is visible...
-						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
-							Attacking=true;																//set as PROTAGONIST is attacking
+					} else if (mvUp[0].alpha==1){										//else if mvUp frame is visible...
+						if (Attacking==false && AtkAgain==false){								//if PROTAGONIST is not attacking...
+							Attacking=true;												//set as PROTAGONIST is attacking
 							AtkAgain=true;
-							mvOff();																	//removes all PROTAGONIST movement frames
-							mvListenerOff();															//unlistens to the Animation Timer for the movements
-							atkUp[0].alpha=1;															//makes first PROTAGONIST attackUp frame appear
-							AttackSU=0;																	//sets the first frame
-							AttackTimer.reset();														//resets the Attack Timer
-							AttackTimer.start();														//starts the Attack Timer
-							AttackTimer.addEventListener(TimerEvent.TIMER, strikeUp);					//listens to the Attack Timer for the PROTAGONIST strikeUp
-							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							mvOff();												//removes all PROTAGONIST movement frames
+							mvListenerOff();											//unlistens to the Animation Timer for the movements
+							atkUp[0].alpha=1;											//makes first PROTAGONIST attackUp frame appear
+							AttackSU=0;												//sets the first frame
+							AttackTimer.reset();											//resets the Attack Timer
+							AttackTimer.start();											//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeUp);						//listens to the Attack Timer for the PROTAGONIST strikeUp
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);					//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
 							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
 							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
 							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
 							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
-							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);							//allows the PROTAGONIST to attack skeleton #Boss
 						}
-					} else if (mvLeft[0].alpha==1){												//else if mvLeft frame is visible...
-						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
-							Attacking=true;																//set as PROTAGONIST is attacking
+					} else if (mvLeft[0].alpha==1){										//else if mvLeft frame is visible...
+						if (Attacking==false && AtkAgain==false){								//if PROTAGONIST is not attacking...
+							Attacking=true;												//set as PROTAGONIST is attacking
 							AtkAgain=true;
-							mvOff();																	//removes all PROTAGONIST movement frames
-							mvListenerOff();															//unlistens to the Animation Timer for the movements
-							atkLeft[0].alpha=1;															//makes first PROTAGONIST attackLeft frame appear
-							AttackSL=0;																	//sets the first frame
-							AttackTimer.reset();														//resets the Attack Timer
-							AttackTimer.start();														//starts the Attack Timer
-							AttackTimer.addEventListener(TimerEvent.TIMER, strikeLeft);					//listens to the Attack Timer for the PROTAGONIST strikeLeft
-							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							mvOff();												//removes all PROTAGONIST movement frames
+							mvListenerOff();											//unlistens to the Animation Timer for the movements
+							atkLeft[0].alpha=1;											//makes first PROTAGONIST attackLeft frame appear
+							AttackSL=0;												//sets the first frame
+							AttackTimer.reset();											//resets the Attack Timer
+							AttackTimer.start();											//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeLeft);						//listens to the Attack Timer for the PROTAGONIST strikeLeft
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);					//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
 							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
 							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
 							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
 							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
-							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);							//allows the PROTAGONIST to attack skeleton #Boss
 						}
-					} else if (mvRight[0].alpha==1){											//else if mvRight frame is visible...
-						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
-							Attacking=true;																//set as PROTAGONIST is attacking
+					} else if (mvRight[0].alpha==1){									//else if mvRight frame is visible...
+						if (Attacking==false && AtkAgain==false){								//if PROTAGONIST is not attacking...
+							Attacking=true;												//set as PROTAGONIST is attacking
 							AtkAgain=true;
-							mvOff();																	//removes all PROTAGONIST movement frames
-							mvListenerOff();															//unlistens to the Animation Timer for the movements
-							atkRight[0].alpha=1;														//makes first PROTAGONIST attackRight frame appear
-							AttackSR=0;																	//sets the first frame
-							AttackTimer.reset();														//resets the Attack Timer
-							AttackTimer.start();														//starts the Attack Timer
-							AttackTimer.addEventListener(TimerEvent.TIMER, strikeRight);				//listens to the Attack Timer for the PROTAGONIST strikeRight
-							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							mvOff();												//removes all PROTAGONIST movement frames
+							mvListenerOff();											//unlistens to the Animation Timer for the movements
+							atkRight[0].alpha=1;											//makes first PROTAGONIST attackRight frame appear
+							AttackSR=0;												//sets the first frame
+							AttackTimer.reset();											//resets the Attack Timer
+							AttackTimer.start();											//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeRight);						//listens to the Attack Timer for the PROTAGONIST strikeRight
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);					//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
 							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
 							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
 							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
 							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
-							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);							//allows the PROTAGONIST to attack skeleton #Boss
 						}
 					}
-				} else if (evt.keyCode==80){													//else if P is pressed...
-					previousState=currentState;														//marks state/map
-					rikuXcheck=map.x;																//marks PROTAGONIST's x-coordinate
-					rikuYcheck=map.y;																//marks PROTAGONIST's y-coordinate
-					pause();																		//pauses game
-				} else if (evt.keyCode==73){													//else if I is pressed...
-					if (invtPage.horizontalCenter>0){												//if Inventory Page is outside the screen...
-						inventory();																	//opens inventory
-					} else {																		//else...
-						invtPage.horizontalCenter=1300;													//puts the Inventory Page to the outisde of the screen
-						invtPage.alpha=0;																//makes the Inventory Page invisbile
+				} else if (evt.keyCode==80){										//else if P is pressed...
+					previousState=currentState;										//marks state/map
+					rikuXcheck=map.x;											//marks PROTAGONIST's x-coordinate
+					rikuYcheck=map.y;											//marks PROTAGONIST's y-coordinate
+					pause();												//pauses game
+				} else if (evt.keyCode==73){										//else if I is pressed...
+					if (invtPage.horizontalCenter>0){									//if Inventory Page is outside the screen...
+						inventory();												//opens inventory
+					} else {												//else...
+						invtPage.horizontalCenter=1300;										//puts the Inventory Page to the outisde of the screen
+						invtPage.alpha=0;											//makes the Inventory Page invisbile
 					}
-				} else if (evt.keyCode==69){													//else if E is pressed...
-					var actCollisions:Array=interactCollision.checkCollisions();					//makes a variable to check for interact Collisions
-					if (actCollisions.length==0){													//if there are no collisions
-						TweenMax.fromTo(noObjRec, 2, {alpha:1}, {alpha:0});								//makes the no Object interactable text appear
-						TweenMax.to(objRec1, 0, {alpha:0});												//AVOIDS overlapping with text#1
-						TweenMax.to(objRec2, 0, {alpha:0});												//AVOIDS overlapping with text#2
+				} else if (evt.keyCode==69){										//else if E is pressed...
+					var actCollisions:Array=interactCollision.checkCollisions();						//makes a variable to check for interact Collisions
+					if (actCollisions.length==0){										//if there are no collisions
+						TweenMax.fromTo(noObjRec, 2, {alpha:1}, {alpha:0});							//makes the no Object interactable text appear
+						TweenMax.to(objRec1, 0, {alpha:0});									//AVOIDS overlapping with text#1
+						TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text#2
 					}
-					if (actCollisions.length>0){													//if there is a collision...
-						var smObject:Object = actCollisions[0].object1;	 								//create a var to represent the small object
-						var lgObject:Object = actCollisions[0].object2;	 								//create a var to represent the large object
-						if (smObject==chestL||smObject==chestR||smObject==chestM2L){					//if PROTAGONIST is colliding with the small Chests...
-							openChest(smObject);															//opens the specific small Chest
-						} else if (lgObject==exit && currentState=='Map1'){								//else if leaving map 1...
-							chgScreen('Map2');																//change screen to map 2
-							skeleDmg=bossSkeleDmg;															//BOSS DAMAGE
-							skeletonBoss.alpha=1;															//BOSS reappears  visible
-							skeletonBoss.health=1000;														//boss health is reset
+					if (actCollisions.length>0){										//if there is a collision...
+						var smObject:Object = actCollisions[0].object1;	 							//create a var to represent the small object
+						var lgObject:Object = actCollisions[0].object2;	 							//create a var to represent the large object
+						if (smObject==chestL||smObject==chestR||smObject==chestM2L){						//if PROTAGONIST is colliding with the small Chests...
+							openChest(smObject);											//opens the specific small Chest
+						} else if (lgObject==exit && currentState=='Map1'){							//else if leaving map 1...
+							chgScreen('Map2');											//change screen to map 2
+							skeleDmg=bossSkeleDmg;											//BOSS DAMAGE
+							skeletonBoss.alpha=1;											//BOSS reappears  visible
+							skeletonBoss.health=1000;										//boss health is reset
 							skeleCollisionB = new CollisionGroup(riku, collDetectB);						//boss and riku collision detector
 							interactCollision = new CollisionGroup(riku, chestM2L, 							//interactable objects in map 2
 								chestM2Scifi1, chestM2Scifi2, chestM2Scifi3, chestM2Scifi4,
 								chestM2Scifi5, exit, ladder1M2, ladder2M2, goMap1);
-							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];								//frames to animate chests in map 2		
+							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];							//frames to animate chests in map 2		
 							chestM2Scifi1.frames=[chestM2U0, chestM2U1, chestM2U2, chestM2U3];			
 							chestM2Scifi2.frames=[chestM2U20, chestM2U21, chestM2U22, chestM2U23];		
 							chestM2Scifi3.frames=[chestM2U30, chestM2U31, chestM2U32, chestM2U33];		
 							chestM2Scifi4.frames=[chestM2U40, chestM2U41, chestM2U42, chestM2U43];		
 							chestM2Scifi5.frames=[chestM2U50, chestM2U51, chestM2U52, chestM2U53];		
-						} else if (lgObject==chestM2Scifi1||lgObject==chestM2Scifi2||					//else if PROTAGONIST is colliding with the large Chests...
+						} else if (lgObject==chestM2Scifi1||lgObject==chestM2Scifi2||						//else if PROTAGONIST is colliding with the large Chests...
 							lgObject==chestM2Scifi3||lgObject==chestM2Scifi4||							
 							lgObject==chestM2Scifi5 && smObject==riku){	 	
-							openChest(lgObject);															//opens the specific large Chest
-						} else if (lgObject==ladder1M2){												//else if PROTAGONIST is in contact with the #1 Map2 Ladder...
-							map.move(-3655, -880);															//moves to specific co-ordinates
-							stopbgm();																		//stops previous background music	
-							playbgm(map2B);																	//plays music for mini boss
-						} else if (lgObject==ladder2M2){												//else if PROTAGONIST is in contact with the #2 Map2...
-							stopbgm();																		//stop current background music
-							playbgm(map1);																	//play background music for map 1
-							map.move(-1060, -320);															//moves to specific co-ordinates
+							openChest(lgObject);											//opens the specific large Chest
+						} else if (lgObject==ladder1M2){									//else if PROTAGONIST is in contact with the #1 Map2 Ladder...
+							map.move(-3655, -880);											//moves to specific co-ordinates
+							stopbgm();												//stops previous background music	
+							playbgm(map2B);												//plays music for mini boss
+						} else if (lgObject==ladder2M2){									//else if PROTAGONIST is in contact with the #2 Map2...
+							stopbgm();												//stop current background music
+							playbgm(map1);												//play background music for map 1
+							map.move(-1060, -320);											//moves to specific co-ordinates
 						} else if (lgObject==goMap1 && currentState=='Map2'){							//else if PROTAGONIST is in contact with the entrance of Map2...
-							skeleDmg=dmg;																	//monster DAMAGE
-							chgScreen('Map1');																//transitions to Map1
-							skeleResetMap1();																//resets all the skeletons
-							interactCollision = new CollisionGroup(riku, chestL, chestR, exit);				//renews the interactCollision for Map1
+							skeleDmg=dmg;												//monster DAMAGE
+							chgScreen('Map1');											//transitions to Map1
+							skeleResetMap1();											//resets all the skeletons
+							interactCollision = new CollisionGroup(riku, chestL, chestR, exit);					//renews the interactCollision for Map1
 							interactCollision.removeItem(ladder1M2 && ladder2M2);							//removes the first ladder and second ladder in Map2
-							visibScreen.move(returnMap1.x+returnMap1.width/2,								//moves the visible Screen to the exit of Map1
+							visibScreen.move(returnMap1.x+returnMap1.width/2,							//moves the visible Screen to the exit of Map1
 								returnMap1.y+returnMap1.height/2);						
-						} else if (lgObject==exit && currentState=='Map2'){								//else if PROTAGONIST is in contact with the exit of Map2...
-							stopbgm();																		//stops the background music
-							chgScreen('Map3');																//transitions to Map3
-							playbgm(map3);																	//plays the Map3 background music
-							safeZ = new CollisionGroup(riku, safeZone);										//sets the safeZone CollisionGroup
-							interactCollision = new CollisionGroup(riku, exit, blacksmithCollDetect,	 	//sets the new interactCollisionGroup
+						} else if (lgObject==exit && currentState=='Map2'){							//else if PROTAGONIST is in contact with the exit of Map2...
+							stopbgm();												//stops the background music
+							chgScreen('Map3');											//transitions to Map3
+							playbgm(map3);												//plays the Map3 background music
+							safeZ = new CollisionGroup(riku, safeZone);								//sets the safeZone CollisionGroup
+							interactCollision = new CollisionGroup(riku, exit, blacksmithCollDetect,	 			//sets the new interactCollisionGroup
 								chefCollDetect, girlCollDetect, goMap2);	
-							mapCollision = new CollisionGroup(riku, noWalk, blacksmith, girl, chef);		//renews the mapCollisionGroup
-						} else if (lgObject==exit && currentState=='Map3'){								//else if you are at exit
-							if (skeletonBoss.health<=0){ 													//skeleton boss is dead
-								chgScreen('WinScreen');															//You Win the Game
+							mapCollision = new CollisionGroup(riku, noWalk, blacksmith, girl, chef);				//renews the mapCollisionGroup
+						} else if (lgObject==exit && currentState=='Map3'){							//else if you are at exit
+							if (skeletonBoss.health<=0){ 										//skeleton boss is dead
+								chgScreen('WinScreen');										//You Win the Game
 							}
 						} else if (lgObject==goMap2 && currentState=='Map3'){							//else if PROTAGONIST is in contact with the entrance of Map3...
-							stopbgm();																		//stops the background music
-							playbgm(map2B);																	//transitions to Map3
-							chgScreen('Map2');																//move to map 2
-							map.move(-4350, -940);															//positions map according to exit
-							mapCollision = new CollisionGroup(riku, noWalk);								//renews the mapCollisionGroup
-							interactCollision = new CollisionGroup(riku, chestM2L, chestM2Scifi1,			//renews possible interactions in map 2
+							stopbgm();												//stops the background music
+							playbgm(map2B);												//transitions to Map3
+							chgScreen('Map2');											//move to map 2
+							map.move(-4350, -940);											//positions map according to exit
+							mapCollision = new CollisionGroup(riku, noWalk);							//renews the mapCollisionGroup
+							interactCollision = new CollisionGroup(riku, chestM2L, chestM2Scifi1,					//renews possible interactions in map 2
 								chestM2Scifi2, chestM2Scifi3, chestM2Scifi4, chestM2Scifi5, exit, 
 								ladder1M2, ladder2M2, goMap1);
-							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];								//frames for animating sci-fi chests
+							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];							//frames for animating sci-fi chests
 							chestM2Scifi1.frames=[chestM2U0, chestM2U1, chestM2U2, chestM2U3];			
 							chestM2Scifi2.frames=[chestM2U20, chestM2U21, chestM2U22, chestM2U23];		
 							chestM2Scifi3.frames=[chestM2U30, chestM2U31, chestM2U32, chestM2U33];	
 							chestM2Scifi4.frames=[chestM2U40, chestM2U41, chestM2U42, chestM2U43];	
 							chestM2Scifi5.frames=[chestM2U50, chestM2U51, chestM2U52, chestM2U53];		
 						} else if (lgObject==girlCollDetect && girlDone==false){						//else if PROTAGONIST is talking to girl...
-							girlChat();																		//girl talks
-						} else if (lgObject==blacksmithCollDetect){										//else if PROTAGONIST is talking to blacksmith...
-							previousState=currentState;														//marks the state/map
-							rikuXcheck=map.x;																//marks the PROTAGONIST x-coordinates
-							rikuYcheck=map.y;																//markes the PROTAGONIST y-coordinates
-							chgScreen('BlacksmithShop');													//Transitions to the BlacksmithShop screen
-							blacksmithChat();																//blacksmith talks
-							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//disables keyDown events(disallow interactions while in shop)
-							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//disables keyUp events
-						} else if (lgObject==chefCollDetect){											//else if PROTAGONIST is talking to chef...
-							previousState=currentState;														//marks the state/map
-							rikuXcheck=map.x;																//marks the PROTAGONIST x-coordinates
-							rikuYcheck=map.y;																//markes the PROTAGONIST y-coordinates
-							chgScreen('Merchant');															//Transitions to the MerchantShop screen
-							chefChat();																		//chef merchant talks
-							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//disables keyDown events(disallow interactions while in shop)
-							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//disables keyUp events
+							girlChat();												//girl talks
+						} else if (lgObject==blacksmithCollDetect){								//else if PROTAGONIST is talking to blacksmith...
+							previousState=currentState;										//marks the state/map
+							rikuXcheck=map.x;											//marks the PROTAGONIST x-coordinates
+							rikuYcheck=map.y;											//markes the PROTAGONIST y-coordinates
+							chgScreen('BlacksmithShop');										//Transitions to the BlacksmithShop screen
+							blacksmithChat();											//blacksmith talks
+							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//disables keyDown events(disallow interactions while in shop)
+							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//disables keyUp events
+						} else if (lgObject==chefCollDetect){									//else if PROTAGONIST is talking to chef...
+							previousState=currentState;										//marks the state/map
+							rikuXcheck=map.x;											//marks the PROTAGONIST x-coordinates
+							rikuYcheck=map.y;											//markes the PROTAGONIST y-coordinates
+							chgScreen('Merchant');											//Transitions to the MerchantShop screen
+							chefChat();												//chef merchant talks
+							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//disables keyDown events(disallow interactions while in shop)
+							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//disables keyUp events
 						}
 					}
-				} else if(evt.keyCode==32){															//else if the spacebar is pressed...
-					if (mvDown[CurrentDown].alpha==1){													//if riku is moving down...
-						if (Attacking==false){																//if riku is not attacking...
-							if (dodging==false){																//if riku is not dodging initially...
-								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
-									dodging=true;																		//riku is dodging
+				} else if(evt.keyCode==32){										//else if the spacebar is pressed...
+					if (mvDown[CurrentDown].alpha==1){									//if riku is moving down...
+						if (Attacking==false){											//if riku is not attacking...
+							if (dodging==false){											//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){										//if stamina bar is not empty...
+									dodging=true;												//riku is dodging
 									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
-									mvOff();																			//changes all moving frames of riku to alpha 0
-									mvListenerOff();																	//stop listening to key presses for riku moving
+									mvOff();												//changes all moving frames of riku to alpha 0
+									mvListenerOff();											//stop listening to key presses for riku moving
 									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
-									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeDown, 							//animates frames for dodging and calls function to move riku
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeDown, 						//animates frames for dodging and calls function to move riku
 										onCompleteParams:[0, dodgeStart]});
-									staminaDecrease();																	//animates stamina bar to decrease to 0
-									dirDodge="D";																		//marks direction dodged in
+									staminaDecrease();											//animates stamina bar to decrease to 0
+									dirDodge="D";												//marks direction dodged in
 								}
 							}
 						}
-					} else if (mvUp[CurrentUp].alpha==1){												//else if riku is moving up...
-						if (Attacking==false){																//if riku is not attacking...
-							if (dodging==false){																//if riku is not dodging initially...
-								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
-									dodging=true;																		//riku is dodging
+					} else if (mvUp[CurrentUp].alpha==1){									//else if riku is moving up...
+						if (Attacking==false){											//if riku is not attacking...
+							if (dodging==false){											//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){										//if stamina bar is not empty...
+									dodging=true;												//riku is dodging
 									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
-									mvOff();																			//changes all moving frames of riku to alpha 0
-									mvListenerOff();																	//stop listening to key presses for riku moving
+									mvOff();												//changes all moving frames of riku to alpha 0
+									mvListenerOff();											//stop listening to key presses for riku moving
 									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
-									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeUp,  							//animates frames for dodging and calls function to move riku
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeUp,  						//animates frames for dodging and calls function to move riku
 										onCompleteParams:[0, dodgeStart]});
-									staminaDecrease();																	//animates stamina bar to decrease to 0
-									dirDodge="U";;																		//marks direction dodged in
+									staminaDecrease();											//animates stamina bar to decrease to 0
+									dirDodge="U";;												//marks direction dodged in
 								}
 							}
 						}
-					} else if (mvLeft[CurrentLeft].alpha==1){											//else if riku is moving left...
-						if (Attacking==false){																//if riku is not attacking...
-							if (dodging==false){																//if riku is not dodging initially...
-								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
-									dodging=true;																		//riku is dodging
+					} else if (mvLeft[CurrentLeft].alpha==1){								//else if riku is moving left...
+						if (Attacking==false){											//if riku is not attacking...
+							if (dodging==false){											//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){										//if stamina bar is not empty...
+									dodging=true;												//riku is dodging
 									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
-									mvOff();																			//changes all moving frames of riku to alpha 0
-									mvListenerOff();																	//stop listening to key presses for riku moving
+									mvOff();												//changes all moving frames of riku to alpha 0
+									mvListenerOff();											//stop listening to key presses for riku moving
 									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
-									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeLeft,  							//animates frames for dodging and calls function to move riku
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeLeft,  						//animates frames for dodging and calls function to move riku
 										onCompleteParams:[0, dodgeStart]});
-									staminaDecrease();																	//animates stamina bar to decrease to 0
-									dirDodge="L";																		//marks direction dodged in
+									staminaDecrease();											//animates stamina bar to decrease to 0
+									dirDodge="L";												//marks direction dodged in
 								}
 							}
 						}
-					} else if (mvRight[CurrentRight].alpha==1){											//else if riku is moving up...
-						if (Attacking==false){																//if riku is not attacking...
-							if (dodging==false){																//if riku is not dodging initially
-								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
-									dodging=true;																		//riku is dodging
+					} else if (mvRight[CurrentRight].alpha==1){								//else if riku is moving up...
+						if (Attacking==false){											//if riku is not attacking...
+							if (dodging==false){											//if riku is not dodging initially
+								if (staminaBar.scaleX>0){										//if stamina bar is not empty...
+									dodging=true;												//riku is dodging
 									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
-									mvOff();																			//changes all moving frames of riku to alpha 0
-									mvListenerOff();																	//stop listening to key presses for riku moving
+									mvOff();												//changes all moving frames of riku to alpha 0
+									mvListenerOff();											//stop listening to key presses for riku moving
 									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
-									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeRight,  							//animates frames for dodging and calls function to move riku
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeRight,  						//animates frames for dodging and calls function to move riku
 										onCompleteParams:[0, dodgeStart]});
-									staminaDecrease();																	//animates stamina bar to decrease to 0
-									dirDodge="R";																		//marks direction dodged in
+									staminaDecrease();											//animates stamina bar to decrease to 0
+									dirDodge="R";												//marks direction dodged in
 								}
 							}
 						}
 					}
-				} else if(evt.keyCode==49){															//else if 1 is pressed...
-					if (healthBar.scaleX>=(1-0.3) && hpPotVal.text>'0'){								//if current health is maximum or above and current health Pot value is more than 0...
-						hpPotVal.text=String(Number(hpPotVal.text)-1);										//decreases the current health Pot value
-						healthBar.scaleX=1;																	//makes the healthBar maximum
-						objRec1.text="1 health potion used";												//changes the text #1
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
-						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
-					} else if (hpPotVal.text<='0'){														//else if current health Pot value is 0
-						hpPotVal.text='0';																	//disallows the current health Pot value to go negative value
-						objRec1.text="No health potions available";											//changes the text #1
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
-						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+				} else if(evt.keyCode==49){										//else if 1 is pressed...
+					if (healthBar.scaleX>=(1-0.3) && hpPotVal.text>'0'){							//if current health is maximum or above and current health Pot value is more than 0...
+						hpPotVal.text=String(Number(hpPotVal.text)-1);								//decreases the current health Pot value
+						healthBar.scaleX=1;											//makes the healthBar maximum
+						objRec1.text="1 health potion used";									//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
+					} else if (hpPotVal.text<='0'){										//else if current health Pot value is 0
+						hpPotVal.text='0';											//disallows the current health Pot value to go negative value
+						objRec1.text="No health potions available";								//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
 					}
-					if (healthBar.scaleX<(1-0.3) && hpPotVal.text>'0'){									//else if current health is below maximum and current health Pot value is more than 0...
-						hpPotVal.text=String(Number(hpPotVal.text)-1);										//decreses the current health Pot value
-						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX+=0.3});							//PROTAGONIST heals
-						objRec1.text="1 health potion used";												//changes the text #1
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
-						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					if (healthBar.scaleX<(1-0.3) && hpPotVal.text>'0'){							//else if current health is below maximum and current health Pot value is more than 0...
+						hpPotVal.text=String(Number(hpPotVal.text)-1);								//decreases the current health Pot value
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX+=0.3});						//PROTAGONIST heals
+						objRec1.text="1 health potion used";									//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
 					}
-				} else if(evt.keyCode==50){															//else if 2 is pressed...
-					if (manaPotVal.text<='0'){															//if current mana Pot value is 0
-						manaPotVal.text='0';																//disallows the current mana Pot value to go negative value
-						objRec2.text="No mana potions available";											//changes the text #2
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
-						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+				} else if(evt.keyCode==50){										//else if 2 is pressed...
+					if (manaPotVal.text<='0'){										//if current mana Pot value is 0
+						manaPotVal.text='0';											//disallows the current mana Pot value to go negative value
+						objRec2.text="No mana potions available";								//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});									//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
 					}
-					if (manaBar.scaleX>=1 && manaPotVal.text>'0'){										//if current mana is maximum or above and current mana Pot value is more than 0...
-						manaPotVal.text=String(Number(manaPotVal.text)-1);									//decreses the current mana Pot value
-						manaBar.scaleX=1;																	//makes the manaBar maximum
-						objRec2.text="1 mana potion used";													//changes the text #2
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
-						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
-					} else if (manaBar.scaleX<1 && manaPotVal.text>'0'){								//else if current mana is below maximum and current mana Pot value is more than 0...
-						manaPotVal.text=String(Number(manaPotVal.text)-1);									//decreses the current health Pot value
-						TweenMax.to(manaBar, 1, {scaleX:manaBar.scaleX+=0.3});								//PROTAGONIST replenishes mana
-						objRec2.text="1 mana potion used";													//changes the text #2
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
-						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					if (manaBar.scaleX>=1 && manaPotVal.text>'0'){								//if current mana is maximum or above and current mana Pot value is more than 0...
+						manaPotVal.text=String(Number(manaPotVal.text)-1);							//decreases the current mana Pot value
+						manaBar.scaleX=1;											//makes the manaBar maximum
+						objRec2.text="1 mana potion used";									//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});									//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
+					} else if (manaBar.scaleX<1 && manaPotVal.text>'0'){							//else if current mana is below maximum and current mana Pot value is more than 0...
+						manaPotVal.text=String(Number(manaPotVal.text)-1);							//decreses the current health Pot value
+						TweenMax.to(manaBar, 1, {scaleX:manaBar.scaleX+=0.3});							//PROTAGONIST replenishes mana
+						objRec2.text="1 mana potion used";									//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});									//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
 					}
-				} else if(evt.keyCode==48){															//else if 0 is pressed...
-					if (staminaPotVal.text<='0'){														//if current stamina Pot value is 0
-						staminaPotVal.text='0';																//disallows the current stamina Pot value to go negative value
-						objRec1.text="No stamina potions available";										//changes the text #1
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
-						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
-						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+				} else if(evt.keyCode==48){										//else if 0 is pressed...
+					if (staminaPotVal.text<='0'){										//if current stamina Pot value is 0
+						staminaPotVal.text='0';											//disallows the current stamina Pot value to go negative value
+						objRec1.text="No stamina potions available";								//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
 					}
 					if ((staminaBar.scaleX>=1 || staminaBar.scaleX<1) 	
-							&& staminaPotVal.text>'0'){													//if current stamina is maximum or above and current stamina Pot value is more than 0...
-						if (dodging==true){																	//if riku is not dodging currently
-							staminaPotVal.text=String(Number(staminaPotVal.text)-1);							//decreases the current stamina Pot value
-							staminaBar.scaleX=1;																//makes the staminaBar maximum instantly
-							objRec1.text="1 stamina potion used";												//changes the text #1
-							TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
-							TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
-							TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
-							TweenMax.killTweensOf(staminaBar, true);											//to kill the tweens of the staminaBar regenerating
-							dodging=false;																		//marks riku as not dodging anymore(to allow dodging again)
+							&& staminaPotVal.text>'0'){								//if current stamina is maximum or above and current stamina Pot value is more than 0...
+						if (dodging==true){											//if riku is not dodging currently
+							staminaPotVal.text=String(Number(staminaPotVal.text)-1);						//decreases the current stamina Pot value
+							staminaBar.scaleX=1;											//makes the staminaBar maximum instantly
+							objRec1.text="1 stamina potion used";									//changes the text #1
+							TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//makes the text #1 appear
+							TweenMax.to(objRec2, 0, {alpha:0});									//AVOIDS overlapping with text #2
+							TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object interactable text
+							TweenMax.killTweensOf(staminaBar, true);								//to kill the tweens of the staminaBar regenerating
+							dodging=false;												//marks riku as not dodging anymore(to allow dodging again)
 						}
 					}
 				}
 			}
 			
 			//NPC CONVERSATIONS
-			public function girlChat(){														//girl's conversation with PROTAGONIST		
-				var randomGChat:Number = Math.random();											//randomizer for girl's lines
+			public function girlChat(){											//girl's conversation with PROTAGONIST		
+				var randomGChat:Number = Math.random();										//randomizer for girl's lines
 				if (randomGChat <= 1/6){
 					girlChatBox.text="Umm... who are you?";
 				} else if (randomGChat <= 2/6){
@@ -749,14 +749,14 @@
 				} else if (randomGChat <= 1){
 					girlChatBox.text="Wow, you came from that skeleton-infested area?";
 				}
-				girlDone=true;																	//girl starts babbling
+				girlDone=true;													//girl starts babbling
 				TweenMax.fromTo(girlChatBox, 4, {alpha:1}, {alpha:0, onComplete:girlChatDone});	//girl's chatBox appears
-				TweenMax.to(noObjRec, 0, {alpha:0});											//PREVENTS overlapping with no object interactable text
-				TweenMax.to(objRec1, 0, {alpha:0});												//PREVETS overlapping with text#1
-				TweenMax.to(objRec2, 0, {alpha:0});												//PREVENTS overlapping with text#2
+				TweenMax.to(noObjRec, 0, {alpha:0});										//PREVENTS overlapping with no object interactable text
+				TweenMax.to(objRec1, 0, {alpha:0});										//PREVETS overlapping with text#1
+				TweenMax.to(objRec2, 0, {alpha:0});										//PREVENTS overlapping with text#2
 			}
-			public function blacksmithChat(){						//blacksmith's conversation with PROTAGONIST
-				var randomBChat:Number = Math.random();					//randomizer for Blacksmith's lines
+			public function blacksmithChat(){							//blacksmith's conversation with PROTAGONIST
+				var randomBChat:Number = Math.random();							//randomizer for Blacksmith's lines
 				if (randomBChat <= 1/6){
 					blacksmithChatBox.text="Hello there! Would you like to purchase some items?";
 				} else if (randomBChat <= 2/6){
@@ -772,7 +772,7 @@
 				}
 			}
 			public function chefChat(){								//chef/merchant's conversation with PROTAGONIST
-				var randomCChat:Number = Math.random();					//randomizer for merchant's lines
+				var randomCChat:Number = Math.random();							//randomizer for merchant's lines
 				if (randomCChat <= 1/6){
 					chefChatBox.text="You can't fight with an empty stomach!";
 				} else if (randomCChat <= 2/6){
@@ -787,11 +787,11 @@
 					chefChatBox.text="You look injured. Care for some potions?";
 				}
 			}
-			public function girlChatDone(){							//for onComplete girl's chatbox Tween
-				girlDone=false;											//girl is ready to talk again
+			public function girlChatDone(){								//for onComplete girl's chatbox Tween
+				girlDone=false;										//girl is ready to talk again
 			}
-			public function shopThanks(vendor:Object){				//for merchant gratitude
-				var randomThanks:Number = Math.random();				//randomizer for shopkeeper's lines
+			public function shopThanks(vendor:Object){						//for merchant gratitude
+				var randomThanks:Number = Math.random();						//randomizer for shopkeeper's lines
 				if (randomThanks <= 1/6){
 					vendor.text="Come and spend your yellows here again! You won't regret it!";
 				} else if (randomThanks <= 2/6){
@@ -808,181 +808,181 @@
 			}
 			
 			//OPENING CHEST FUNCTION
-			public function openChest(chest:Object){										//Open chests+items inside text appearing
-				if (chest.open==false){															//if chest is closed...
-					chest.open=true;																//chest is opened
-					animate(0, chest.frames, 0.1);													//animate the chest from the first frame to the last
-					if (chest.health>0){															//if chest contains health pots...
-						objRec1.text="You have received "+chest.health+" health potions";				//change the first label for object received
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});								//health potions received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+			public function openChest(chest:Object){								//Open chests+items inside text appearing
+				if (chest.open==false){											//if chest is closed...
+					chest.open=true;											//chest is opened
+					animate(0, chest.frames, 0.1);										//animate the chest from the first frame to the last
+					if (chest.health>0){											//if chest contains health pots...
+						objRec1.text="You have received "+chest.health+" health potions";					//change the first label for object received
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//health potions received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
 						hpPotVal.text=String(Number(hpPotVal.text)+chest.health);						//updates the health pots quantity
-						slot1.alpha=1;																	//Makes the health pot image visible
-						hpPotVal.alpha=1;																//Makes the health pots quantity visible\
+						slot1.alpha=1;												//Makes the health pot image visible
+						hpPotVal.alpha=1;											//Makes the health pots quantity visible
 						
 					}
-					if (chest.mana>0){																//if chest contains mana pots...
-						objRec2.text="You have received "+chest.mana+" mana potions";					//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//mana potions received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+					if (chest.mana>0){											//if chest contains mana pots...
+						objRec2.text="You have received "+chest.mana+" mana potions";						//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//mana potions received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
 						manaPotVal.text=String(Number(manaPotVal.text)+chest.mana);						//updates the mana pots quantity
-						slot2.alpha=1;																	//Makes the mana pot image visible
-						manaPotVal.alpha=1;																//Makes the mana pot quantity visible
+						slot2.alpha=1;												//Makes the mana pot image visible
+						manaPotVal.alpha=1;											//Makes the mana pot quantity visible
 					}
-					if (chest.gold>0){																//if chest contains gold coins...
+					if (chest.gold>0){											//if chest contains gold coins...
 						objRec1.text="You have received "+chest.gold+" gold coins";						//change the first label for object received
-						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});								//gold coins received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						curr.text=String(Number(curr.text)+chest.gold);									//updates the currency in inventory page
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});							//gold coins received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						curr.text=String(Number(curr.text)+chest.gold);								//updates the currency in inventory page
 						currInShop.text=String(Number(currInShop.text)+chest.gold);						//updates the currency in shop pages
 					}
-					if (chest.chestArmour=="assets/chestA1.png"){									//if chest contains chest Armor1
-						objRec2.text="You have received XGrim";											//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//chest armor received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						chestPiece.alpha=1;																//chestPiece slot for PROTAGONIST equipment appears
-						rikuDef=10;																		//boosts up riku's defense
-						armorStats.text=String(rikuDef);												//updates riku's defence stats
+					if (chest.chestArmour=="assets/chestA1.png"){								//if chest contains chest Armor1
+						objRec2.text="You have received XGrim";									//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//chest armor received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						chestPiece.alpha=1;											//chestPiece slot for PROTAGONIST equipment appears
+						rikuDef=10;												//boosts up riku's defense
+						armorStats.text=String(rikuDef);									//updates riku's defence stats
 					}
-					if (chest.boots=="assets/boots1.png"){											//if chest contains boots1
-						objRec2.text="You have received XGrimWalker";									//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//boots received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						bootsPiece.alpha=1;																//bootsPiece slot for PROTAGONIST equipment appears
-						spd=20;																			//boosts up riku's speed
-						spdStats.text=String(spd);														//updates riku's movement speed stats
+					if (chest.boots=="assets/boots1.png"){									//if chest contains boots1
+						objRec2.text="You have received XGrimWalker";								//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//boots received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						bootsPiece.alpha=1;											//bootsPiece slot for PROTAGONIST equipment appears
+						spd=20;													//boosts up riku's speed
+						spdStats.text=String(spd);										//updates riku's movement speed stats
 					}
-					if (chest.ring=="assets/ring1.png"){											//if chest contains ring1
-						objRec2.text="You have received XRing";											//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//ring received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						ringPiece.alpha=1;																//ringPiece slot for PROTAGONIST equpment appears
+					if (chest.ring=="assets/ring1.png"){									//if chest contains ring1
+						objRec2.text="You have received XRing";									//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//ring received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						ringPiece.alpha=1;											//ringPiece slot for PROTAGONIST equpment appears
 						TweenMax.to(riku, 3, {glowFilter:{color:0x000000, alpha:1, blurX:10, 
-											blurY:10, strength:2}, ease:Circ.easeOut});					//makes PROTAGONIST GLOW
+											blurY:10, strength:2}, ease:Circ.easeOut});			//makes PROTAGONIST GLOW
 					}
-					if (chest.weapon=="assets/weapon1.png"){										//if chest contains weapon1
-						objRec2.text="You have received XCaliber";										//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//weapon received text appears	
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						sword.alpha=1;																	//sword slot for PROTAGONIST equipment appears
-						rikuDmg=15;																		//changes riku's damage
-						atkStats.text=String(rikuDmg);													//updates riku's attack stats
+					if (chest.weapon=="assets/weapon1.png"){								//if chest contains weapon1
+						objRec2.text="You have received XCaliber";								//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//weapon received text appears	
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						sword.alpha=1;												//sword slot for PROTAGONIST equipment appears
+						rikuDmg=15;												//changes riku's damage
+						atkStats.text=String(rikuDmg);										//updates riku's attack stats
 					}
-					if (chest.helmet=="assets/robe1.png"){											//if chest contains robe1
-						objRec2.text="You have received XCloak";										//change the second label for object received
-						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//robe received text appears
-						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
-						helmetPiece.alpha=1;															//helmetPiece slot for PROTAGONIST equipment appears
-						riku.alpha=0.5;																	//makes riku partially invisible
+					if (chest.helmet=="assets/robe1.png"){									//if chest contains robe1
+						objRec2.text="You have received XCloak";								//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});							//robe received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});									//AVOIDS overlapping with no object found text
+						helmetPiece.alpha=1;											//helmetPiece slot for PROTAGONIST equipment appears
+						riku.alpha=0.5;												//makes riku partially invisible
 					}
 				}
 			}
 			
 			//DODGE SKILL
-			public function dodgeLeft (currentFrame:uint, frame:Array){			//makes riku dodge left (initial dodging frames)
+			public function dodgeLeft (currentFrame:uint, frame:Array){				//makes riku dodge left (initial dodging frames)
 				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
-				currentFrame++;														//moves to next frame
-				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
-					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
+				currentFrame++;										//moves to next frame
+				if (currentFrame<frame.length){								//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 					//make frame visibility to 1 (opaque) and recalls function
 						{alpha:1, onComplete:dodgeLeft, 
 							onCompleteParams:[currentFrame, frame]});
-				} else {															//else...
-					map.x+=dash;														//move riku to the left (riku is transparent)
-					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				} else {										//else...
+					map.x+=dash;										//move riku to the left (riku is transparent)
+					dodgeDone(0, dodgeEnd);									//call function to animate end of dodging 
 				}
 			}
-			public function dodgeRight (currentFrame:uint, frame:Array){		//makes riku dodge right (initial dodging frames)
-				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
-				currentFrame++;														//moves to next frame
-				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+			public function dodgeRight (currentFrame:uint, frame:Array){			//makes riku dodge right (initial dodging frames)
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});				//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;									//moves to next frame
+				if (currentFrame<frame.length){							//if current frame is less than dodging array length...
 					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
 						{alpha:1, onComplete:dodgeRight, 		
 							onCompleteParams:[currentFrame, frame]});
-				} else {															//else...
-					map.x-=dash;														//move riku to the right (riku is transparent)
-					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				} else {									//else...
+					map.x-=dash;									//move riku to the right (riku is transparent)
+					dodgeDone(0, dodgeEnd);								//call function to animate end of dodging 
 				}
 			}
 			public function dodgeUp (currentFrame:uint, frame:Array){			//makes riku dodge up (initial dodging frames)
-				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
-				currentFrame++;														//moves to next frame
-				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});				//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;									//moves to next frame
+				if (currentFrame<frame.length){							//if current frame is less than dodging array length...
 					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
 						{alpha:1, onComplete:dodgeUp, 
 							onCompleteParams:[currentFrame, frame]});
-				} else {															//else...
-					map.y+=dash;														//move riku to the up (riku is transparent)
-					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				} else {									//else...
+					map.y+=dash;									//move riku to the up (riku is transparent)
+					dodgeDone(0, dodgeEnd);								//call function to animate end of dodging 
 				}
 			}
 			public function dodgeDown (currentFrame:uint, frame:Array){			//makes riku dodge down (initial dodging frames)
-				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
-				currentFrame++;														//moves to next frame
-				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});				//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;									//moves to next frame
+				if (currentFrame<frame.length){							//if current frame is less than dodging array length...
 					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
 						{alpha:1, onComplete:dodgeDown, 
 							onCompleteParams:[currentFrame, frame]});
-				} else {															//else...
-					map.y-=dash;														//move riku to the down (riku is transparent)
-					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				} else {									//else...
+					map.y-=dash;									//move riku to the down (riku is transparent)
+					dodgeDone(0, dodgeEnd);								//call function to animate end of dodging 
 				}
 			}
 			public function dodgeDone (currentFrame:uint, frame:Array){					//animates end dodging frames
-				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});							//make (final frame of starting dodge=first frame of ending dodge) transparent
-				currentFrame++;																//move to next frame
-				if (currentFrame<frame.length){													//if current frame is less than dodging array length...
-					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, {alpha:1, 				//make frame visibility to 1 (opaque) and recalls function
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});						//make (final frame of starting dodge=first frame of ending dodge) transparent
+				currentFrame++;											//move to next frame
+				if (currentFrame<frame.length){									//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, {alpha:1, 					//make frame visibility to 1 (opaque) and recalls function
 						onComplete:dodgeDone, onCompleteParams:[currentFrame, frame]});	
-				} else {																	//else...
-					dodgeReset();																//allows riku to move and animates stamina bar to default size
+				} else {											//else...
+					dodgeReset();											//allows riku to move and animates stamina bar to default size
 				}
 			}
-			public function dodgeReset (){												//allows riku to move and animates stamina bar to default size
-				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//starts listening for key releases 
+			public function dodgeReset (){								//allows riku to move and animates stamina bar to default size
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);				//starts listening for key releases 
 				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//starts listening for key presses
 				if (dirDodge=="U"){
-					mvUp[0].alpha=1;															//make default frame of riku visible
+					mvUp[0].alpha=1;									//make default frame of riku visible
 				} else if (dirDodge=="D"){
-					mvDown[0].alpha=1;															//make default frame of riku visible
+					mvDown[0].alpha=1;									//make default frame of riku visible
 				} else if (dirDodge=="L"){
-					mvLeft[0].alpha=1;															//make default frame of riku visible
+					mvLeft[0].alpha=1;									//make default frame of riku visible
 				} else if (dirDodge=="R"){
-					mvRight[0].alpha=1;															//make default frame of riku visible
+					mvRight[0].alpha=1;									//make default frame of riku visible
 				}
-				undoDodge();																//makes sure riku does not dodge onto no walking areas
-				if (staminaBar.scaleX==0){													//if stamina bar is 0 (empty)
-					TweenMax.fromTo(staminaBar, 5, {scaleX:0}, 									//animate||refill stamina bar to default state (full)
+				undoDodge();										//makes sure riku does not dodge onto no walking areas
+				if (staminaBar.scaleX==0){								//if stamina bar is 0 (empty)
+					TweenMax.fromTo(staminaBar, 5, {scaleX:0}, 						//animate||refill stamina bar to default state (full)
 						{scaleX:1, onComplete:repeatDodge});	
 				}
 			}
-			public function undoDodge (){									//makes riku move back if riku lands on no walking area
+			public function undoDodge (){							//makes riku move back if riku lands on no walking area
 				var mvColls:Array = mapCollision.checkCollisions();				//checks if riku collides with no walking areas
-				if (dirDodge=="L"){												//if riku dodged left...
-					if (mvColls.length>0){											//if riku lands onto a no walking area...
-						map.x-=dash;													//make riku move back
+				if (dirDodge=="L"){								//if riku dodged left...
+					if (mvColls.length>0){								//if riku lands onto a no walking area...
+						map.x-=dash;									//make riku move back
 					}
 				}
-				if (dirDodge=="R"){												//if riku dodged right...
-					if (mvColls.length>0){											//if riku lands onto a no walking area...
-						map.x+=dash;													//make riku move back
+				if (dirDodge=="R"){								//if riku dodged right...
+					if (mvColls.length>0){								//if riku lands onto a no walking area...
+						map.x+=dash;									//make riku move back
 					}
 				}
-				if (dirDodge=="U"){													//if riku dodged up...
-					if (mvColls.length>0){											//if riku lands onto a no walking area...
-						map.y-=dash;													//make riku move back
+				if (dirDodge=="U"){								//if riku dodged up...
+					if (mvColls.length>0){								//if riku lands onto a no walking area...
+						map.y-=dash;									//make riku move back
 					}
 				}
-				if (dirDodge=="D"){												//if riku dodged down...
-					if (mvColls.length>0){											//if riku lands onto a no walking area...
-						map.y+=dash;													//make riku move back
+				if (dirDodge=="D"){								//if riku dodged down...
+					if (mvColls.length>0){								//if riku lands onto a no walking area...
+						map.y+=dash;									//make riku move back
 					}
 				}
 			}
 			public function repeatDodge (){				//resets dodge checker
-				dodging=false;								//changes checker to default so riku can dodge again
+				dodging=false;						//changes checker to default so riku can dodge again
 			}
 			public function staminaDecrease (){			//decreases stamina bar to 0
-				if (staminaBar.scaleX==1){					//if stamina bar is full...
+				if (staminaBar.scaleX==1){				//if stamina bar is full...
 					TweenMax.fromTo(staminaBar, 0.5, 			//animate stamina bar to decrease to 0
 						{scaleX:1}, {scaleX:0});
 				}
@@ -990,351 +990,350 @@
 			
 			//PROTAGONIST MOVEMENTS + ANIMATIONS
 			public function Up(evt:TimerEvent){						//move UP
-				mvOff();												//removes all the PROTAGONIST movement frames
-				map.y+=spd;												//drags the map down
-				CurrentUp++;											//increases the currentUp frame for PROTAGONIST
+				mvOff();									//removes all the PROTAGONIST movement frames
+				map.y+=spd;									//drags the map down
+				CurrentUp++;									//increases the currentUp frame for PROTAGONIST
 				if (CurrentUp==mvUp.length){							//if currentUp frame is last...
-					CurrentUp=1;											//sets the movement frame to the PROTAGONIST moving frame
+					CurrentUp=1;									//sets the movement frame to the PROTAGONIST moving frame
 				}
-				mvUp[CurrentUp].alpha=1;								//makes the mvUp frame visible 
-				var mvColls:Array = mapCollision.checkCollisions();		//checks the mapCollision
-				if (mvColls.length>0){									//if PROTAGONIST is at the edge
-					map.y-=spd;												//pushes PROTAGONIST back
+				mvUp[CurrentUp].alpha=1;							//makes the mvUp frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();				//checks the mapCollision
+				if (mvColls.length>0){								//if PROTAGONIST is at the edge
+					map.y-=spd;									//pushes PROTAGONIST back
 				}
-				var safeArea:Array = safeZ.checkCollisions();			//checks for safeZone collision
-				if (safeArea.length>0){									//if there is a collision...
-					if (safebgm==false){									//if the safeZone background music is not playing
-						stopbgm();												//stops background music
-						playbgm(town);											//plays the town background music
-						safebgm=true;											//background music is playing
+				var safeArea:Array = safeZ.checkCollisions();					//checks for safeZone collision
+				if (safeArea.length>0){								//if there is a collision...
+					if (safebgm==false){								//if the safeZone background music is not playing
+						stopbgm();									//stops background music
+						playbgm(town);									//plays the town background music
+						safebgm=true;									//background music is playing
 					}
-				} else if (safeArea.length==0){							//if there is no collision...
-					if (safebgm==true){										//if the safeZone background music is still playing
-						stopbgm();												//stops the music
-						playbgm(map3);											//plays the map3 background music
-						safebgm=false;											//sets the background music as not playing
+				} else if (safeArea.length==0){							//else if there is no collision...
+					if (safebgm==true){								//if the safeZone background music is still playing
+						stopbgm();									//stops the music
+						playbgm(map3);									//plays the map3 background music
+						safebgm=false;									//sets the background music as not playing
 					}
 				}
 			}
 			public function Down(evt:TimerEvent){						//move DOWN
-				mvOff();													//removes all the PROTAGONIST movement frames
-				map.y-=spd;													//drags the map up
-				CurrentDown++;												//increases the currentDown frame for PROTAGONIST
-				if (CurrentDown==mvDown.length){							//if currentDown frame is last...
-					CurrentDown=1;												//sets the movement frame to the PROTAGONIST moving frame
+				mvOff();									//removes all the PROTAGONIST movement frames
+				map.y-=spd;									//drags the map up
+				CurrentDown++;									//increases the currentDown frame for PROTAGONIST
+				if (CurrentDown==mvDown.length){						//if currentDown frame is last...
+					CurrentDown=1;									//sets the movement frame to the PROTAGONIST moving frame
 				}
-				mvDown[CurrentDown].alpha=1;								//makes the mvDown frame visible 
-				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
-				if (mvColls.length>0){										//if PROTAGONIST is at the edge
-					map.y+=spd;													//pushes PROTAGONIST back	
+				mvDown[CurrentDown].alpha=1;							//makes the mvDown frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();				//checks the mapCollision
+				if (mvColls.length>0){								//if PROTAGONIST is at the edge
+					map.y+=spd;									//pushes PROTAGONIST back	
 				}
-				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
-				if (safeArea.length>0){										//if there is a collision...
-					if (safebgm==false){										//if the safeZone background music is not playing...
-						stopbgm();													//stops background music
-						playbgm(town);												//plays the town background music
-						safebgm=true;												//background music is playing
+				var safeArea:Array = safeZ.checkCollisions();					//checks for safeZone collision
+				if (safeArea.length>0){								//if there is a collision...
+					if (safebgm==false){								//if the safeZone background music is not playing...
+						stopbgm();									//stops background music
+						playbgm(town);									//plays the town background music
+						safebgm=true;									//background music is playing
 					}
-				} else if (safeArea.length==0){								//else if there is no collision...
-					if (safebgm==true){											//if the safeZone background music is still playing...
-						stopbgm();													//stops the music
-						playbgm(map3);												//plays the map3 background music
-						safebgm=false;												//sets the background music as not playing
+				} else if (safeArea.length==0){							//else if there is no collision...
+					if (safebgm==true){								//if the safeZone background music is still playing...
+						stopbgm();									//stops the music
+						playbgm(map3);									//plays the map3 background music
+						safebgm=false;									//sets the background music as not playing
 					}
 				}
 			}
 			public function Left(evt:TimerEvent){						//move LEFT
-				mvOff();													//removes all the PROTAGONIST movement frames
-				map.x+=spd;													//drags the map right
-				CurrentLeft++;												//increases the currentLeft frame for PROTAGONIST
-				if (CurrentLeft==mvLeft.length){							//if currentLeft frame is last...
-					CurrentLeft=1;												//sets the movement frame to the PROTAGONIST moving frame
+				mvOff();									//removes all the PROTAGONIST movement frames
+				map.x+=spd;									//drags the map right
+				CurrentLeft++;									//increases the currentLeft frame for PROTAGONIST
+				if (CurrentLeft==mvLeft.length){						//if currentLeft frame is last...
+					CurrentLeft=1;									//sets the movement frame to the PROTAGONIST moving frame
 				}
-				mvLeft[CurrentLeft].alpha=1;								//makes the mvLeft frame visible 
-				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
-				if (mvColls.length>0){										//if PROTAGONIST is at the edge
-					map.x-=spd;													//pushes PROTAGONIST back
+				mvLeft[CurrentLeft].alpha=1;							//makes the mvLeft frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();				//checks the mapCollision
+				if (mvColls.length>0){									//if PROTAGONIST is at the edge
+					map.x-=spd;										//pushes PROTAGONIST back
 				}
-				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
-				if (safeArea.length>0){										//if there is a collision...
-					if (safebgm==false){										//if the safeZone background music is not playing
-						stopbgm();													//stops background music
-						playbgm(town);												//plays the town background music
-						safebgm=true;												//background music is playing
+				var safeArea:Array = safeZ.checkCollisions();					//checks for safeZone collision
+				if (safeArea.length>0){								//if there is a collision...
+					if (safebgm==false){								//if the safeZone background music is not playing
+						stopbgm();									//stops background music
+						playbgm(town);									//plays the town background music
+						safebgm=true;									//background music is playing
 					}
-				} else if (safeArea.length==0){								//if there is no collision...
-					if (safebgm==true){											//if the safeZone background music is still playing
-						stopbgm();													//stops the music
-						playbgm(map3);												//plays the map3 background music
-						safebgm=false;												//sets the background music as not playing
+				} else if (safeArea.length==0){								//else if there is no collision...
+					if (safebgm==true){									//if the safeZone background music is still playing
+						stopbgm();										//stops the music
+						playbgm(map3);										//plays the map3 background music
+						safebgm=false;										//sets the background music as not playing
 					}
 				}
 			}
 			public function Right(evt:TimerEvent){						//move RIGHT
-				mvOff();													//removes all the PROTAGONIST movement frames
-				map.x-=spd;													//drags the map left
-				CurrentRight++;												//increases the currentRight frame for PROTAGONIST
-				if (CurrentRight==mvRight.length){							//if currentRight frame is last...
-					CurrentRight=1;												//sets the movement frame to the PROTAGONIST moving frame
+				mvOff();									//removes all the PROTAGONIST movement frames
+				map.x-=spd;									//drags the map left
+				CurrentRight++;									//increases the currentRight frame for PROTAGONIST
+				if (CurrentRight==mvRight.length){						//if currentRight frame is last...
+					CurrentRight=1;									//sets the movement frame to the PROTAGONIST moving frame
 				}
-				mvRight[CurrentRight].alpha=1;								//makes the mvRight frame visible 
-				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
-				if (mvColls.length>0){										//if PROTAGONIST is at the edge
-					map.x+=spd;													//pushes PROTAGONIST back
+				mvRight[CurrentRight].alpha=1;							//makes the mvRight frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();				//checks the mapCollision
+				if (mvColls.length>0){								//if PROTAGONIST is at the edge
+					map.x+=spd;									//pushes PROTAGONIST back
 				}
-				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
-				if (safeArea.length>0){										//if there is a collision...
-					if (safebgm==false){										//if the safeZone background music is not playing
-						stopbgm();													//stops background music
-						playbgm(town);												//plays the town background music
-						safebgm=true;												//background music is playing
+				var safeArea:Array = safeZ.checkCollisions();					//checks for safeZone collision
+				if (safeArea.length>0){								//if there is a collision...
+					if (safebgm==false){								//if the safeZone background music is not playing
+						stopbgm();									//stops background music
+						playbgm(town);									//plays the town background music
+						safebgm=true;									//background music is playing
 					}
-				} else if (safeArea.length==0){								//if there is no collision...
-					if (safebgm==true){											//if the safeZone background music is still playing
-						stopbgm();													//stops the music
-						playbgm(map3);												//plays the map3 background music
-						safebgm=false;												//sets the background music as not playing
+				} else if (safeArea.length==0){							//else if there is no collision...
+					if (safebgm==true){								//if the safeZone background music is still playing
+						stopbgm();									//stops the music
+						playbgm(map3);									//plays the map3 background music
+						safebgm=false;									//sets the background music as not playing
 					}
 				}
 			}
 			
 			//PROTAGONIST ATTACK ANIMATIONS
 			public function strikeDown(evt:TimerEvent){					//attack DOWN
-				atkDown[AttackSD].alpha=0;									//set the current atkDown frame invisible
-				AttackSD++;													//increases the current atkDown frame
-				if (AttackSD<atkDown.length){								//if current atkDown frame is not last...
-					atkDown[AttackSD].alpha=1;									//sets the current atkDown frame visible
-				} else { 													//else if current atkDown frame is last...
-					mvDown[0].alpha=1;											//makes the first mvDown frame visible
+				atkDown[AttackSD].alpha=0;							//set the current atkDown frame invisible
+				AttackSD++;									//increases the current atkDown frame
+				if (AttackSD<atkDown.length){							//if current atkDown frame is not last...
+					atkDown[AttackSD].alpha=1;							//sets the current atkDown frame visible
+				} else { 									//else if current atkDown frame is last...
+					mvDown[0].alpha=1;								//makes the first mvDown frame visible
 				}
 			}	
 			public function strikeUp(evt:TimerEvent){					//attack UP
-				atkUp[AttackSU].alpha=0;									//set the current atkUp frame invisible
-				AttackSU++;													//increases the current atkUp frame
-				if (AttackSU<atkUp.length){									//if current atkUp frame is not last...
-					atkUp[AttackSU].alpha=1;									//sets the current atkUp frame visible
-				} else { 													//else if current atkUp frame is last...
-					mvUp[0].alpha=1;											//makes the first mvUp frame visible
+				atkUp[AttackSU].alpha=0;							//set the current atkUp frame invisible
+				AttackSU++;									//increases the current atkUp frame
+				if (AttackSU<atkUp.length){							//if current atkUp frame is not last...
+					atkUp[AttackSU].alpha=1;							//sets the current atkUp frame visible
+				} else { 									//else if current atkUp frame is last...
+					mvUp[0].alpha=1;								//makes the first mvUp frame visible
 				}
 			}
 			public function strikeLeft(evt:TimerEvent){					//attack LEFT
-				atkLeft[AttackSL].alpha=0;									//set the current atkLeft frame invisible
-				AttackSL++;													//increases the current atkLeft frame
-				if (AttackSL<atkLeft.length){								//if current atkLeft frame is not last...
-					atkLeft[AttackSL].alpha=1;									//sets the current atkLeft frame visible
-				} else {													//else if current atkLeft frame is last...
-					mvLeft[0].alpha=1;											//makes the first mvLeft frame visible
+				atkLeft[AttackSL].alpha=0;							//set the current atkLeft frame invisible
+				AttackSL++;									//increases the current atkLeft frame
+				if (AttackSL<atkLeft.length){							//if current atkLeft frame is not last...
+					atkLeft[AttackSL].alpha=1;							//sets the current atkLeft frame visible
+				} else {									//else if current atkLeft frame is last...
+					mvLeft[0].alpha=1;								//makes the first mvLeft frame visible
 				}
 			}
 			public function strikeRight(evt:TimerEvent){				//attack RIGHT
-				atkRight[AttackSR].alpha=0;									//set the current atkRight frame invisible
-				AttackSR++;													//increases the current atkRight frame
-				if (AttackSR<atkRight.length){								//if current atkRight frame is not last...
-					atkRight[AttackSR].alpha=1;									//sets the current atkRight frame visible
-				} else {													//else if current atkRight frame is last...
-					mvRight[0].alpha=1;											//makes the first mvRight frame visible
+				atkRight[AttackSR].alpha=0;						//set the current atkRight frame invisible
+				AttackSR++;								//increases the current atkRight frame
+				if (AttackSR<atkRight.length){						//if current atkRight frame is not last...
+					atkRight[AttackSR].alpha=1;						//sets the current atkRight frame visible
+				} else {								//else if current atkRight frame is last...
+					mvRight[0].alpha=1;							//makes the first mvRight frame visible
 				}
 			}
-			public function rikuAtk(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){		//helper function (riku attacks mobs)
-				if (riku.hitTestPoint(mob.x+mob.width/2+visibScreen.x+map.x, 
-												mob.y+visibScreen.y+map.y)){							//if Riku is attacking the mob directly...
-					if (sword.alpha==1 && sword.source=="assets/weapon1.png"){								//if Riku obtains sword1....
-						TweenMax.fromTo(mob, 0.5, {tint:0x9999cc}, {tint:null});								//damage color is dull purple
-					} else if (sword.source=="assets/weapon2.png"){											//else if Riku obtains iceSword(sword2)... 
-						TweenMax.fromTo(mob, 0.5, {tint:0x66ffff}, {tint:null});								//damage color is ice(teal)
-					} else if (sword.source=="assets/weapon3.png"){											//else if Riku obtains fireSword(sword3)...
-						TweenMax.fromTo(mob, 0.5, {tint:0xff6600}, {tint:null});								//damage color is fire(orange)
-					} else if (sword.source=="assets/weapon4.png"){											//else if Riku obtains poisonSword(sword4)...
-						TweenMax.fromTo(mob, 0.5, {tint:0x660066}, {tint:null});								//damage color is poison(purple)
-					} else {																					//else riku is using default weapon...
-						TweenMax.fromTo(mob, 0.5, {tint:0xff0000}, {tint:null});								//damaged is notified (tint).
+			public function rikuAtk(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){			//helper function (riku attacks mobs)
+				if (riku.hitTestPoint(mob.x+mob.width/2+visibScreen.x+map.x, mob.y+visibScreen.y+map.y)){		//if Riku is attacking the mob directly...
+					if (sword.alpha==1 && sword.source=="assets/weapon1.png"){						//if Riku obtains sword1....
+						TweenMax.fromTo(mob, 0.5, {tint:0x9999cc}, {tint:null});						//damage color is dull purple
+					} else if (sword.source=="assets/weapon2.png"){								//else if Riku obtains iceSword(sword2)... 
+						TweenMax.fromTo(mob, 0.5, {tint:0x66ffff}, {tint:null});						//damage color is ice(teal)
+					} else if (sword.source=="assets/weapon3.png"){								//else if Riku obtains fireSword(sword3)...
+						TweenMax.fromTo(mob, 0.5, {tint:0xff6600}, {tint:null});						//damage color is fire(orange)
+					} else if (sword.source=="assets/weapon4.png"){								//else if Riku obtains poisonSword(sword4)...
+						TweenMax.fromTo(mob, 0.5, {tint:0x660066}, {tint:null});						//damage color is poison(purple)
+					} else {												//else riku is using default weapon...
+						TweenMax.fromTo(mob, 0.5, {tint:0xff0000}, {tint:null});						//damaged is notified (tint).
 					}
-					mobDie(mob, mobColl, mobCollDetect);														//mob follows the mobDie function
-					mob.health-=rikuDmg;																		//mob's health decreases according to PROTAGONIST's damage
+					mobDie(mob, mobColl, mobCollDetect);									//mob follows the mobDie function
+					mob.health-=rikuDmg;											//mob's health decreases according to PROTAGONIST's damage
 				}
 			}
 			
 			//INTERACTABLE OBJECTS ANIMATIONS
 			public function animate(currentFrame:uint, frame:Array, time:Number){					//ANIMATION function
-				TweenMax.to(frame[currentFrame], time, {alpha:0});										//makes the current frame disappear
-				currentFrame++;																			//increases the current frame
-				if (currentFrame<frame.length-1){														//if the current frame is not the last...
-					TweenMax.fromTo(frame[currentFrame], time, {alpha:0},									//animates the object
+				TweenMax.to(frame[currentFrame], time, {alpha:0});							//makes the current frame disappear
+				currentFrame++;												//increases the current frame
+				if (currentFrame<frame.length-1){									//if the current frame is not the last...
+					TweenMax.fromTo(frame[currentFrame], time, {alpha:0},							//animates the object
 						{alpha:1, onComplete:animate, onCompleteParams:[currentFrame, frame, time]});		
-				} else {																					//else...
-					TweenMax.to(frame[currentFrame], time, {alpha:1});										//makes the current frame visible
+				} else {												//else...
+					TweenMax.to(frame[currentFrame], time, {alpha:1});							//makes the current frame visible
 				}
 			}
 			
 			//ANIMATIONS DONE
-			public function doneAttacking(evt:TimerEvent){			//for onComplete Tween for attacking Tween
-				Attacking=false;										//PROTAGONIST is done attacking
+			public function doneAttacking(evt:TimerEvent){						//for onComplete Tween for attacking Tween
+				Attacking=false;									//PROTAGONIST is done attacking
 			}
 			public function mvOff(){								//removes all PROTAGONIST movement frames
 				mvUp[CurrentUp].alpha=0;								//sets the mvUp frame invisible
-				mvDown[CurrentDown].alpha=0;							//sets the mvDown frame invisible
-				mvRight[CurrentRight].alpha=0;							//sets the mvRight frame invisible
-				mvLeft[CurrentLeft].alpha=0;							//sets the mvLeft frame invisible
+				mvDown[CurrentDown].alpha=0;								//sets the mvDown frame invisible
+				mvRight[CurrentRight].alpha=0;								//sets the mvRight frame invisible
+				mvLeft[CurrentLeft].alpha=0;								//sets the mvLeft frame invisible
 			}
 			public function doneAttackingE (monster:Skeleton){		//for onComplete Tween for mob attacking Tween
-				monster.Attacking=false;								//Monster is done attacking
-				monsterTimer.start();									//starts the monster following animation Timer
-				battleTimer.start();									//starts the monster attacking animation Timer
+				monster.Attacking=false;					//Monster is done attacking
+				monsterTimer.start();						//starts the monster following animation Timer
+				battleTimer.start();						//starts the monster attacking animation Timer
 			}
 			public function skeleOff(skeleton:Skeleton){			//removes all skeleton movement frames
-				skeleton.Right[skeleton.frameR].alpha=0;				//sets the skeleton mvRight frame invisible
-				skeleton.Left[skeleton.frameL].alpha=0;					//sets the skeleton mvLeft frame invisible
-				skeleton.Up[skeleton.frameU].alpha=0;					//sets the skeleton mvUp frame invisible
-				skeleton.Down[skeleton.frameD].alpha=0;					//sets the skeleton mvDown rame invisible
+				skeleton.Right[skeleton.frameR].alpha=0;			//sets the skeleton mvRight frame invisible
+				skeleton.Left[skeleton.frameL].alpha=0;				//sets the skeleton mvLeft frame invisible
+				skeleton.Up[skeleton.frameU].alpha=0;				//sets the skeleton mvUp frame invisible
+				skeleton.Down[skeleton.frameD].alpha=0;				//sets the skeleton mvDown rame invisible
 			}
 			
 			//MOBS ANIMATIONS
 			public function mvSkeletonL(skeleton:Skeleton){		//animate monster moving left
-				skeleton.Left[skeleton.frameL].alpha=0;				//make initial frame transparent
-				skeleton.frameL++;									//move to next frame
-				if (skeleton.frameL==skeleton.Left.length){			//if current frame is equal to the left monster array length...		
-					skeleton.frameL=0;									//make frame of monster default (0)
+				skeleton.Left[skeleton.frameL].alpha=0;			//make initial frame transparent
+				skeleton.frameL++;					//move to next frame
+				if (skeleton.frameL==skeleton.Left.length){		//if current frame is equal to the left monster array length...		
+					skeleton.frameL=0;					//make frame of monster default (0)
 				}
-				skeleton.Left[skeleton.frameL].alpha=1;				//make frame opaque
+				skeleton.Left[skeleton.frameL].alpha=1;			//make frame opaque
 			}
 			public function mvSkeletonR(skeleton:Skeleton){		//animate monster moving right
-				skeleton.Right[skeleton.frameR].alpha=0;			//make initial frame transparent
-				skeleton.frameR++;									//move to next frame
+				skeleton.Right[skeleton.frameR].alpha=0;		//make initial frame transparent
+				skeleton.frameR++;					//move to next frame
 				if (skeleton.frameR==skeleton.Right.length){		//if current frame is equal to the right monster array length...		
-					skeleton.frameR=0;									//make frame of monster default (0)
+					skeleton.frameR=0;					//make frame of monster default (0)
 				}
-				skeleton.Right[skeleton.frameR].alpha=1;			//make frame opaque
+				skeleton.Right[skeleton.frameR].alpha=1;		//make frame opaque
 			}
-			public function mvSkeletonU(skeleton:Skeleton){		//animate monster moving up
+			public function mvSkeletonU(skeleton:Skeleton){			//animate monster moving up
 				skeleton.Up[skeleton.frameU].alpha=0;				//make initial frame transparent
-				skeleton.frameU++;									//move to next frame
+				skeleton.frameU++;						//move to next frame
 				if (skeleton.frameU==skeleton.Up.length){			//if current frame is equal to the up monster array length...		
-					skeleton.frameU=0;									//make frame of monster default (0)
+					skeleton.frameU=0;						//make frame of monster default (0)
 				}
 				skeleton.Up[skeleton.frameU].alpha=1;				//make frame opaque
 			}
 			public function mvSkeletonD(skeleton:Skeleton){		//animate monster moving down
-				skeleton.Down[skeleton.frameD].alpha=0;				//make initial frame transparent
-				skeleton.frameD++;									//move to next frame
-				if (skeleton.frameD==skeleton.Down.length){			//if current frame is equal to the down monster array length...		
-					skeleton.frameD=0;									//make frame of monster default (0)
+				skeleton.Down[skeleton.frameD].alpha=0;			//make initial frame transparent
+				skeleton.frameD++;					//move to next frame
+				if (skeleton.frameD==skeleton.Down.length){		//if current frame is equal to the down monster array length...		
+					skeleton.frameD=0;					//make frame of monster default (0)
 				}
-				skeleton.Down[skeleton.frameD].alpha=1;				//make frame opaque
+				skeleton.Down[skeleton.frameD].alpha=1;			//make frame opaque
 			}
 			public function monstersFollow(evt:TimerEvent){		//function frequently called to make monster follow riku if in radius
-				monsterFollow(skeleton1, skeleCollision1);			//makes monster1 follow riku if in radius
-				monsterFollow(skeleton2, skeleCollision2);			//makes monster2 follow riku if in radius
-				monsterFollow(skeleton3, skeleCollision3);			//makes monster3 follow riku if in radius
-				monsterFollow(skeleton4, skeleCollision4);			//makes monster4 follow riku if in radius
+				monsterFollow(skeleton1, skeleCollision1);		//makes monster1 follow riku if in radius
+				monsterFollow(skeleton2, skeleCollision2);		//makes monster2 follow riku if in radius
+				monsterFollow(skeleton3, skeleCollision3);		//makes monster3 follow riku if in radius
+				monsterFollow(skeleton4, skeleCollision4);		//makes monster4 follow riku if in radius
 				monsterFollow(skeletonBoss, skeleCollisionB);		//makes skeletonBoss follow riku if in radius
 			}
-			public function monsterFollow(monster:Skeleton, monsterCollision:CollisionGroup){		//makes monster follow riku when in radius
-				var skeleColls:Array = monsterCollision.checkCollisions();								//variable used to check if there are collisions between riku and monster
-				if (skeleColls.length>0){																//if there is a collision...
-					var smObject:Object = skeleColls[0].object1;											//create a var to represent the small object
-					var lgObject:Object = skeleColls[0].object2;	 									 	//create a var to represent the large object
-					if (riku==smObject && riku.x>monster.x+map.x && monster.Attacking==false){				//if riku is the small object in collision && riku is more to the right than the monster && monster is not attacking...
-						skeleOff(monster);																		//makes current frame of monster transparent
-						mvSkeletonR(monster);																	//calls function to animate monster as it moves right towards riku
-						if (riku.x>monster.x+map.x+spd){														//if riku is still more to the right even when monster moves towards riku...
-							monster.x+=spd;																			//make monster still move right
-						} else {																				//else...
-							monster.x=riku.x-map.x;																	//make monster be right next to riku
+			public function monsterFollow(monster:Skeleton, monsterCollision:CollisionGroup){	//makes monster follow riku when in radius
+				var skeleColls:Array = monsterCollision.checkCollisions();				//variable used to check if there are collisions between riku and monster
+				if (skeleColls.length>0){								//if there is a collision...
+					var smObject:Object = skeleColls[0].object1;						//create a var to represent the small object
+					var lgObject:Object = skeleColls[0].object2;	 					//create a var to represent the large object
+					if (riku==smObject && riku.x>monster.x+map.x && monster.Attacking==false){		//if riku is the small object in collision && riku is more to the right than the monster && monster is not attacking...
+						skeleOff(monster);									//makes current frame of monster transparent
+						mvSkeletonR(monster);									//calls function to animate monster as it moves right towards riku
+						if (riku.x>monster.x+map.x+spd){							//if riku is still more to the right even when monster moves towards riku...
+							monster.x+=spd;										//make monster still move right
+						} else {										//else...
+							monster.x=riku.x-map.x;									//make monster be right next to riku
 						}
-					} else if (riku==smObject && riku.x<monster.x+map.x && monster.Attacking==false){		//else if riku is the small object in collision && riku is more to the left than the monster && monster is not attacking...
-						skeleOff(monster);																		//makes current frame of monster transparent
-						mvSkeletonL(monster);																	//calls function to animate monster as it moves left towards riku		
-						if (riku.x<monster.x+map.x+spd){														//if riku is still more to the left even when monster moves towards riku...
-							monster.x-=spd;																			//make monster still move left
-						} else {																				//else...
-							monster.x=riku.x-map.x;																	//make monster be left next to riku
+					} else if (riku==smObject && riku.x<monster.x+map.x && monster.Attacking==false){	//else if riku is the small object in collision && riku is more to the left than the monster && monster is not attacking...
+						skeleOff(monster);									//makes current frame of monster transparent
+						mvSkeletonL(monster);									//calls function to animate monster as it moves left towards riku		
+						if (riku.x<monster.x+map.x+spd){							//if riku is still more to the left even when monster moves towards riku...
+							monster.x-=spd;										//make monster still move left
+						} else {										//else...
+							monster.x=riku.x-map.x;									//make monster be left next to riku
 						}
 					} 
-					if (riku==smObject && riku.y>monster.y+map.y && monster.Attacking==false){				//else if riku is the small object in collision && riku is more to the down than the monster && monster is not attacking...
-						skeleOff(monster);																		//makes current frame of monster transparent
-						mvSkeletonD(monster);																	//calls function to animate monster as it moves down towards riku
-						if (riku.y>monster.y+map.y+spd){														//if riku is still down even when monster moves towards riku...
-							monster.y+=spd;																			//make monster still move down
-						} else {																				//else...
-							monster.y=riku.y-map.y;																	//make monster be down next to riku
+					if (riku==smObject && riku.y>monster.y+map.y && monster.Attacking==false){		//else if riku is the small object in collision && riku is more to the down than the monster && monster is not attacking...
+						skeleOff(monster);									//makes current frame of monster transparent
+						mvSkeletonD(monster);									//calls function to animate monster as it moves down towards riku
+						if (riku.y>monster.y+map.y+spd){							//if riku is still down even when monster moves towards riku...
+							monster.y+=spd;										//make monster still move down
+						} else {										//else...
+							monster.y=riku.y-map.y;									//make monster be down next to riku
 						}
-					} else if (riku==smObject && riku.y<monster.y+map.y && monster.Attacking==false){		//else if riku is the small object in collision && riku is more to the up than the monster && monster is not attacking...
-						skeleOff(monster);																		//makes current frame of monster transparent
-						mvSkeletonU(monster);																	//calls function to animate monster as it moves up towards riku
-						if (riku.y<monster.y+map.y+spd){														//if riku is still more up even when monster moves towards riku...
-							monster.y-=spd;																			//make monster still move up
-						} else {																				//else...
-							skeleton1.y=riku.y-map.y;																//make monster be up next to riku
+					} else if (riku==smObject && riku.y<monster.y+map.y && monster.Attacking==false){	//else if riku is the small object in collision && riku is more to the up than the monster && monster is not attacking...
+						skeleOff(monster);									//makes current frame of monster transparent
+						mvSkeletonU(monster);									//calls function to animate monster as it moves up towards riku
+						if (riku.y<monster.y+map.y+spd){							//if riku is still more up even when monster moves towards riku...
+							monster.y-=spd;										//make monster still move up
+						} else {										//else...
+							skeleton1.y=riku.y-map.y;								//make monster be up next to riku
 						}
 					} 
 				}
 			}
-			public function enemiesAtk(evt:TimerEvent){			//function frequently called to make monster attack riku if in contact
-				enemyAtk(skeleton1);								//makes monster1 attack riku if in contact
-				enemyAtk(skeleton2);								//makes monster2 follow riku if in radius
-				enemyAtk(skeleton3);								//makes monster3 follow riku if in radius
-				enemyAtk(skeleton4);								//makes monster4 follow riku if in radius
-				enemyAtk(skeletonBoss);								//makes skeletonBoss follow riku in radius
+			public function enemiesAtk(evt:TimerEvent){						//function frequently called to make monster attack riku if in contact
+				enemyAtk(skeleton1);									//makes monster1 attack riku if in contact
+				enemyAtk(skeleton2);									//makes monster2 follow riku if in radius
+				enemyAtk(skeleton3);									//makes monster3 follow riku if in radius
+				enemyAtk(skeleton4);									//makes monster4 follow riku if in radius
+				enemyAtk(skeletonBoss);									//makes skeletonBoss follow riku in radius
 			}
-			public function enemyAtk(monster:Skeleton){											//makes monster attack riku
-				if (riku.hitTestPoint(monster.x+(monster.width*1.35)+visibScreen.x+map.x, 			//if riku is in contact with monster from the left...
+			public function enemyAtk(monster:Skeleton){						//makes monster attack riku
+				if (riku.hitTestPoint(monster.x+(monster.width*1.35)+visibScreen.x+map.x, 		//if riku is in contact with monster from the left...
 					monster.y+visibScreen.y+map.y)){													
-					battleTimer.stop();																	//stop timer that checks and makes monster attack
-					if (monster.Attacking==false){														//if monster is attacking...
-						monsterTimer.stop();																//stop timer that makes monster follow riku
-						monster.Attacking=true;																//mark checker that monster is attacking
-						skeleOff(monster);																	//remove current visible frames of monster
-						monster.AtkRight[0].alpha=1;														//make initial attacking frame of monster visible
-						animateAtk(0, monster.AtkRight, 0.1, monster);										//animate monster attacking
+					battleTimer.stop();									//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){								//if monster is attacking...
+						monsterTimer.stop();									//stop timer that makes monster follow riku
+						monster.Attacking=true;									//mark checker that monster is attacking
+						skeleOff(monster);									//remove current visible frames of monster
+						monster.AtkRight[0].alpha=1;								//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkRight, 0.1, monster);						//animate monster attacking
 						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
-						rikuDie();																			//calls function to see if riku is dead
+						rikuDie();										//calls function to see if riku is dead
 					}
-				} else if (riku.hitTestPoint(monster.x+(monster.width/1.35)+visibScreen.x+map.x, 	//if riku is in contact with monster from the right...
+				} else if (riku.hitTestPoint(monster.x+(monster.width/1.35)+visibScreen.x+map.x, 	//else if riku is in contact with monster from the right...
 					monster.y+visibScreen.y+map.y)){													
-					battleTimer.stop();																	//stop timer that checks and makes monster attack
-					if (monster.Attacking==false){														//if monster is attacking...
-						monsterTimer.stop();																//stop timer that makes monster follow riku
-						monster.Attacking=true;																//mark checker that monster is attacking
-						skeleOff(monster);																	//remove current visible frames of monster
-						monster.AtkLeft[0].alpha=1;															//make initial attacking frame of monster visible
-						animateAtk(0, monster.AtkLeft, 0.1, monster);										//animate monster attacking
+					battleTimer.stop();									//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){								//if monster is attacking...
+						monsterTimer.stop();									//stop timer that makes monster follow riku
+						monster.Attacking=true;									//mark checker that monster is attacking
+						skeleOff(monster);									//remove current visible frames of monster
+						monster.AtkLeft[0].alpha=1;								//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkLeft, 0.1, monster);						//animate monster attacking
 						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
-						rikuDie();																			//calls function to see if riku is dead
+						rikuDie();										//calls function to see if riku is dead
 					}
-				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 			//if riku is in contact with monster from the bottom...
+				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 		//else if riku is in contact with monster from the bottom...
 					monster.y-(monster.height/5)+visibScreen.y+map.y)){	
-					battleTimer.stop();																	//stop timer that checks and makes monster attack
-					if (monster.Attacking==false){														//if monster is attacking...
-						monsterTimer.stop();																//stop timer that makes monster follow riku
-						monster.Attacking=true;																//mark checker that monster is attacking
-						skeleOff(monster);																	//remove current visible frames of monster
-						monster.AtkUp[0].alpha=1;															//make initial attacking frame of monster visible
-						animateAtk(0, monster.AtkUp, 0.1, monster);											//animate monster attacking
+					battleTimer.stop();									//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){								//if monster is attacking...
+						monsterTimer.stop();									//stop timer that makes monster follow riku
+						monster.Attacking=true;									//mark checker that monster is attacking
+						skeleOff(monster);									//remove current visible frames of monster
+						monster.AtkUp[0].alpha=1;								//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkUp, 0.1, monster);						//animate monster attacking
 						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
-						rikuDie();																			//calls function to see if riku is dead
+						rikuDie();										//calls function to see if riku is dead
 					}
-				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 			//if riku is in contact with monster from the top...
+				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 		//else if riku is in contact with monster from the top...
 					monster.y+monster.height/3+visibScreen.y+map.y)){									
-					battleTimer.stop();																	//stop timer that checks and makes monster attack
-					if (monster.Attacking==false){														//if monster is attacking...
-						monsterTimer.stop();																//stop timer that makes monster follow riku
-						monster.Attacking=true;																//mark checker that monster is attacking
-						skeleOff(monster);																	//remove current visible frames of monster
-						monster.AtkDown[0].alpha=1;															//make initial attacking frame of monster visible
-						animateAtk(0, monster.AtkDown, 0.05, monster);										//animate monster attacking
+					battleTimer.stop();									//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){								//if monster is attacking...
+						monsterTimer.stop();									//stop timer that makes monster follow riku
+						monster.Attacking=true;									//mark checker that monster is attacking
+						skeleOff(monster);									//remove current visible frames of monster
+						monster.AtkDown[0].alpha=1;								//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkDown, 0.05, monster);						//animate monster attacking
 						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
-						rikuDie();																			//calls function to see if riku is dead
+						rikuDie();										//calls function to see if riku is dead
 					}
 				}
 			}
 			public function animateAtk(currentFrame:uint, frame:Array, time:Number, monster:Skeleton){		//animates monster attacking riku
-				TweenMax.to(frame[currentFrame], time, {alpha:0});												//makes initial attacking frame transparent
-				currentFrame++;																					//moves to next frame
-				if (currentFrame<frame.length){																	//if current frame is less than attacking array length...
-					TweenMax.fromTo(frame[currentFrame], time, {alpha:0}, {alpha:1, 								//make frame visible and recall function
+				TweenMax.to(frame[currentFrame], time, {alpha:0});							//makes initial attacking frame transparent
+				currentFrame++;												//moves to next frame
+				if (currentFrame<frame.length){										//if current frame is less than attacking array length...
+					TweenMax.fromTo(frame[currentFrame], time, {alpha:0}, {alpha:1, 					//make frame visible and recall function
 						onComplete:animateAtk, onCompleteParams:[currentFrame, frame, time, monster]});
-				} else {																						//else...
-					TweenMax.to(frame[currentFrame-1], time, {alpha:0, onComplete:doneAttackingE, 					//make frame transparent and call function to reset attacking
+				} else {												//else...
+					TweenMax.to(frame[currentFrame-1], time, {alpha:0, onComplete:doneAttackingE, 				//make frame transparent and call function to reset attacking
 						onCompleteParams:[monster]});
 				}
 			}
@@ -1359,7 +1358,7 @@
 				healthBar.scaleX=1;
 				staminaBar.scaleX=1;
 				manaBar.scaleX=1;
-				pausePage.horizontalCenter=-955;			//NOTE:if certain objects aren't resetted, that is intentional
+				pausePage.horizontalCenter=-955;				//NOTE:if certain objects aren't resetted, that is intentional
 				pausePage.alpha=0;
 				invtPage.horizontalCenter=1300;
 				invtPage.alpha=0;
@@ -1390,7 +1389,7 @@
 				sword.source="assets/sword1.png";
 				
 			}
-			public function skeleResetMap1(){			//resets monsters in first map
+			public function skeleResetMap1(){					//resets monsters in first map
 				skeleton1.alpha=1;
 				skeleton2.alpha=1;
 				skeleton3.alpha=1;
@@ -1403,7 +1402,7 @@
 				skeleton1.move(320, 355);
 				skeleton1.Right[0].alpha=1;
 				skeleton2.move(1458, 1488);
-				skeleton2.Left[0].alpha=1;					//NOTE:if certain objects aren't reset, that is intentional
+				skeleton2.Left[0].alpha=1;						//NOTE:if certain objects aren't reset, that is intentional
 				skeleton3.move(317, 1488);
 				skeleton3.Up[0].alpha=1;
 				skeleton4.move(1458, 355);
@@ -1413,12 +1412,12 @@
 				skeleCollision3 = new CollisionGroup(riku, collDetect3);
 				skeleCollision4 = new CollisionGroup(riku, collDetect4);
 			}
-			public function skeleResetMap2(){									//resets skeleton boss
+			public function skeleResetMap2(){					//resets skeleton boss
 				skeletonBoss.alpha=1;												
 				skeletonBoss.health=1000;											
 				skeleCollisionB = new CollisionGroup(riku, collDetectB);			
 				skeleOff(skeletonBoss);												
-				skeletonBoss.Left[0].alpha=1;										//NOTE:if certain objects aren't reset, that is intentional
+				skeletonBoss.Left[0].alpha=1;						//NOTE:if certain objects aren't reset, that is intentional
 				skeletonBoss.move(4779, 1177);										
 			}
 		]]>
