@@ -1,0 +1,2779 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:ICS4U="com.ICS4U.*"
+			   minWidth="955" minHeight="600" applicationComplete="gameIntro();"
+			   currentState="Introduction"
+			   backgroundColor.BlacksmithShop="#000000"
+			   backgroundColor.Credits="#000000"
+			   backgroundColor.GameOver="#000000"
+			   backgroundColor.Instructions="#000000"
+			   backgroundColor.Introduction="#000000"
+			   backgroundColor.MainMenu="#000000"
+			   backgroundColor.Map1="#000000"
+			   backgroundColor.Map2="#000000"
+			   backgroundColor.Map3="#000000"
+			   backgroundColor.Merchant="#000000"
+			   backgroundColor.WinScreen="#000000">
+	
+	<s:states>
+		<!--Display screens of game-->
+		<s:State name="Introduction"/>
+		<s:State name="MainMenu"/>
+		<s:State name="Instructions"/>
+		<s:State name="Credits"/>
+		<s:State name="Map1"/>
+		<s:State name="Map2"/>
+		<s:State name="Map3"/>
+		<s:State name="BlacksmithShop"/> 
+		<s:State name="Merchant"/>
+		<s:State name="GameOver"/>
+		<s:State name="WinScreen"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			
+			//IMPORTED PACKAGES
+			import com.ICS4U.*;
+			import com.coreyoneil.collision.*;
+			import com.greensock.*;
+			import com.greensock.easing.*;
+			import com.greensock.plugins.*;
+			import org.osmf.events.TimeEvent;
+			TweenPlugin.activate([GlowFilterPlugin]);				//all imported packages used in program
+			
+			//VARIABLES
+			//created timers 
+			public var skipTimer:Timer=new Timer(1000,1);			//skip button timer
+			public var AnimationTimer:Timer=new Timer(50); 			//movements animation timer
+			public var AttackTimer:Timer=new Timer(50,5);			//attack animation timer
+			public var battleTimer:Timer=new Timer(10);				//monster attacking animation Timer
+			public var monsterTimer:Timer=new Timer(100); 			//monster following animation Timer
+			
+			//created arrays for animation
+			public var mvUp:Array;									//UP animations array
+			public var mvDown:Array;								//DOWN animation array
+			public var mvLeft:Array;								//LEFT animations array
+			public var mvRight:Array;								//RIGHT animations array
+			public var atkUp:Array;									//ATTACK UP animations array
+			public var atkDown:Array;								//ATTACK DOWN animations array
+			public var atkLeft:Array;								//ATTACK LEFT animations array
+			public var atkRight:Array;								//ATTACK RIGHT animations array
+			public var leftChest:Array;								//Left chest animations array
+			public var rightChest:Array;							//Right chest animations array
+			public var dodgeStart:Array;							//initial dodging animation array
+			public var dodgeEnd:Array;								//ending dodge animation array
+			
+			//created numerical variables 
+			public var CurrentUp:uint=0;							//Default current UP frame
+			public var CurrentDown:uint=0;							//Default current DOWN frame
+			public var CurrentLeft:uint=0;							//Default current LEFT frame
+			public var CurrentRight:uint=0;							//Default current RIGHT frame
+			public var AttackSU:uint=0;								//Default current Skeleton ATTACK UP frame
+			public var AttackSD:uint=0;								//Default current Skeleton ATTACK DOWN frame
+			public var AttackSL:uint=0;								//Default current Skeleton ATTACK LEFT frame
+			public var AttackSR:uint=0;								//Default current Skeleton ATTACK RIGHT frame
+			public var spd:uint=15;									//movement speed
+			public var rikuDmg:uint=10;								//PROTAGONIST default damage
+			public var rikuDef:uint=5;								//PROTAGONIST default defense
+			public var bossSkeleDmg:Number=300/1000					//skele Boss default damage
+			public var dmg:Number=60/1000;							//skele default damage
+			public var skeleDmg:Number;								//skeleton class damage
+			public var dash:uint=200;								//distance moved before ending dodge animation
+			public var rikuXcheck:int;								//PROTAGONIST x-coordinate marker
+			public var rikuYcheck:int;								//PROTAGONIST y-coordinate marker
+			
+			//created boolean variables to track motion||animation
+			public var Attacking:Boolean=false;						//attack stop checker
+			public var AtkAgain:Boolean=false;						//attack again checker
+			public var checkMM:Boolean=false;						//flag for checking the MainMenu button tweens
+			public var dodging:Boolean=false;						//multiple dodge stopper
+			public var girlDone:Boolean=false;						//Girl done talking checker
+			public var safebgm:Boolean=false;						//safeZone background music checker
+			
+			
+			//created collision groups
+			public var safeZ:CollisionGroup;						//safe zone collision group to change sound
+			public var mapCollision:CollisionGroup;					//MAP walls collision
+			public var interactCollision:CollisionGroup;			//INTERACT; Doors,Chests,Objects,NPC (objects that are collided with)			
+			public var skeleCollision1:CollisionGroup;				//SKELETON 1 MOB collision
+			public var skeleCollision2:CollisionGroup;				//SKELETON 2 MOB collision
+			public var skeleCollision3:CollisionGroup;				//SKELETON 3 MOB collision
+			public var skeleCollision4:CollisionGroup;				//SKELETON 4 MOB collision
+			public var skeleCollisionB:CollisionGroup;				//SKELETON 4 MOB collision
+			
+			//created string
+			public var previousState:String;						//previous screen marker
+			public var dirDodge:String;								//direction dodged in tracker
+			
+			//created audios used
+			public var bgm:SoundChannel;														//control sounds used in game
+			public var intro:Sound = new Sound(new URLRequest('assets/intro.mp3'));				//introduction sound
+			public var map1:Sound = new Sound(new URLRequest('assets/map1.mp3'));				//sound run in map 1 and map 2
+			public var town:Sound = new Sound(new URLRequest('assets/safePlace.mp3'));			//sound used when in safe zone
+			public var map2B:Sound = new Sound(new URLRequest('assets/7 Hells Battle.mp3'));	//sound used when fighting mini boss
+			public var map3:Sound = new Sound(new URLRequest('assets/map3.mp3'));				//sound run in entering map 3 out of safe zone
+			
+			//BUTTON FUNCTIONS
+			public function effectSkip(){							//Skip to MainMenu
+				chgScreen('MainMenu');									//displays MainMenu screen
+				mainMenu();												//starts the MainMenu animations
+			}
+			public function checkMMBtn(){							//signals functions to exit MainMenu to run
+				checkMM=true;											//MainMenu animations are done
+			}
+			public function mainMenu(){																		//MainMenu button animations
+				if (checkMM==false){																			//if main menu animations is still running...
+					TweenMax.fromTo(pfLogo, 5, {glowFilter:{remove:true}}, 											//the Phase Fact LOGO glows
+						{glowFilter:{color:0x990000, alpha:0.5, blurX:30, blurY:30, strength:3, quality:3}, 
+						ease:Bounce.easeOut});
+					TweenMax.from(startBtn, 2, {x:-stage.width, ease:Bounce.easeOut});								//the Start button transitions in
+					TweenMax.from(creditBtn, 2, {x:-stage.width, ease:Bounce.easeOut});								//the Credits button transitions in
+					TweenMax.from(InstrucBtn, 2, {x:stage.width, ease:Bounce.easeOut, onComplete:checkMMBtn});		//the Instuction button transitions in
+				}
+			}
+			public function startGame(){																						//STARTS GAME
+				if (checkMM==true){																									//if main menu animation is done...
+					checkMM=false;																										//reset checker that tracks the animation
+					stopbgm();																											//stop the introduction sound
+					playbgm(map1);																										//play map 1 sound
+					chgScreen('Map1');																									//change screen to map 1
+					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);														//start listening for key presses
+					stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);															//start listening for key releases
+					chestL.frames=[chestL0, chestL1, chestL2];																			//frames of opening chests
+					chestR.frames=[chestR0, chestR1, chestR2];														
+					skeleton1.Right=[skeleR0, skeleR1, skeleR2, skeleR3, skeleR4, skeleR5, skeleR6];									//movement frames of monsters
+					skeleton1.Left=[skeleL0, skeleL1, skeleL2, skeleL3, skeleL4, skeleL5, skeleL6];
+					skeleton1.Up=[skeleU0, skeleU1, skeleU2, skeleU3, skeleU4, skeleU5, skeleU6];
+					skeleton1.Down=[skeleD0, skeleD1, skeleD2, skeleD3, skeleD4, skeleD5, skeleD6];
+					skeleton2.Right=[skele2R0, skele2R1, skele2R2, skele2R3, skele2R4, skele2R5, skele2R6];
+					skeleton2.Left=[skele2L0, skele2L1, skele2L2, skele2L3, skele2L4, skele2L5, skele2L6];
+					skeleton2.Up=[skele2U0, skele2U1, skele2U2, skele2U3, skele2U4, skele2U5, skele2U6];
+					skeleton2.Down=[skele2D0, skele2D1, skele2D2, skele2D3, skele2D4, skele2D5, skele2D6];
+					skeleton3.Right=[skele3R0, skele3R1, skele3R2, skele3R3, skele3R4, skele3R5, skele3R6];
+					skeleton3.Left=[skele3L0, skele3L1, skele3L2, skele3L3, skele3L4, skele3L5, skele3L6];
+					skeleton3.Up=[skele3U0, skele3U1, skele3U2, skele3U3, skele3U4, skele3U5, skele3U6];
+					skeleton3.Down=[skele3D0, skele3D1, skele3D2, skele3D3, skele3D4, skele3D5, skele3D6];
+					skeleton4.Right=[skele4R0, skele4R1, skele4R2, skele4R3, skele4R4, skele4R5, skele4R6];
+					skeleton4.Left=[skele4L0, skele4L1, skele4L2, skele4L3, skele4L4, skele4L5, skele4L6];
+					skeleton4.Up=[skele4U0, skele4U1, skele4U2, skele4U3, skele4U4, skele4U5, skele4U6];
+					skeleton4.Down=[skele4D0, skele4D1, skele4D2, skele4D3, skele4D4, skele4D5, skele4D6];
+					skeletonBoss.Right=[skeleBR0, skeleBR1, skeleBR2, skeleBR3, skeleBR4, skeleBR5, skeleBR6];
+					skeletonBoss.Left=[skeleBL0, skeleBL1, skeleBL2, skeleBL3, skeleBL4, skeleBL5, skeleBL6];
+					skeletonBoss.Up=[skeleBU0, skeleBU1, skeleBU2, skeleBU3, skeleBU4, skeleBU5, skeleBU6];
+					skeletonBoss.Down=[skeleBD0, skeleBD1, skeleBD2, skeleBD3, skeleBD4, skeleBD5, skeleBD6];
+					AnimationTimer.start();																								//start timer for riku movement animation
+					mvUp=[rikuU0, rikuU1, rikuU2, rikuU3, rikuU4, rikuU5, rikuU6, rikuU7, rikuU8];										//movement frames of riku
+					mvDown=[rikuD0, rikuD1, rikuD2, rikuD3, rikuD4, rikuD5, rikuD6, rikuD7, rikuD8];
+					mvLeft=[rikuL0, rikuL8, rikuL7, rikuL6, rikuL5, rikuL4, rikuL3, rikuL2, rikuL1];
+					mvRight=[rikuR0, rikuR1, rikuR2, rikuR3, rikuR4, rikuR5, rikuR6, rikuR7, rikuR8];
+					atkDown=[rikuAD1, rikuAD2, rikuAD3, rikuAD4, rikuAD5];
+					atkUp=[rikuAU1, rikuAU2, rikuAU3, rikuAU4, rikuAU5];																//attacking frames of riku
+					atkLeft=[rikuAL1, rikuAL2, rikuAL3, rikuAL4, rikuAL5];
+					atkRight=[rikuAR1, rikuAR2, rikuAR3, rikuAR4, rikuAR5];
+					skeleCollision1 = new CollisionGroup(riku, collDetect1);															//collision groups for fighting between riku && monster
+					skeleCollision2 = new CollisionGroup(riku, collDetect2);
+					skeleCollision3 = new CollisionGroup(riku, collDetect3);
+					skeleCollision4 = new CollisionGroup(riku, collDetect4);
+					mapCollision = new CollisionGroup(riku, noWalk);																	//collision group for riku and no walking area
+					interactCollision = new CollisionGroup(riku, chestL, chestR, exit);													//collision group for opening chests and exiting map
+					skeleton1.AtkDown=[skeleSD0, skeleSD1, skeleSD2, skeleSD3, skeleSD4, skeleSD5, skeleSD6, skeleSD7];					//attacking frames of monsters
+					skeleton1.AtkUp=[skeleSU0, skeleSU1, skeleSU2, skeleSU3, skeleSU4, skeleSU5, skeleSU6, skeleSU7];
+					skeleton1.AtkLeft=[skeleSL0, skeleSL1, skeleSL2, skeleSL3, skeleSL4, skeleSL5, skeleSL6, skeleSL7];
+					skeleton1.AtkRight=[skeleSR0, skeleSR1, skeleSR2, skeleSR3, skeleSR4, skeleSR5, skeleSR6, skeleSR7];
+					skeleton2.AtkDown=[skele2SD0, skele2SD1, skele2SD2, skele2SD3, skele2SD4, skele2SD5, skele2SD6, skele2SD7];
+					skeleton2.AtkUp=[skele2SU0, skele2SU1, skele2SU2, skele2SU3, skele2SU4, skele2SU5, skele2SU6, skele2SU7];
+					skeleton2.AtkLeft=[skele2SL0, skele2SL1, skele2SL2, skele2SL3, skele2SL4, skele2SL5, skele2SL6, skele2SL7];
+					skeleton2.AtkRight=[skele2SR0, skele2SR1, skele2SR2, skele2SR3, skele2SR4, skele2SR5, skele2SR6, skele2SR7];
+					skeleton3.AtkDown=[skele3SD0, skele3SD1, skele3SD2, skele3SD3, skele3SD4, skele3SD5, skele3SD6, skele3SD7];
+					skeleton3.AtkUp=[skele3SU0, skele3SU1, skele3SU2, skele3SU3, skele3SU4, skele3SU5, skele3SU6, skele3SU7];
+					skeleton3.AtkLeft=[skele3SL0, skele3SL1, skele3SL2, skele3SL3, skele3SL4, skele3SL5, skele3SL6, skele3SL7];
+					skeleton3.AtkRight=[skele3SR0, skele3SR1, skele3SR2, skele3SR3, skele3SR4, skele3SR5, skele3SR6, skele3SR7];
+					skeleton4.AtkDown=[skele4SD0, skele4SD1, skele4SD2, skele4SD3, skele2SD4, skele4SD5, skele4SD6, skele4SD7];
+					skeleton4.AtkUp=[skele4SU0, skele4SU1, skele4SU2, skele4SU3, skele4SU4, skele4SU5, skele4SU6, skele4SU7];
+					skeleton4.AtkLeft=[skele4SL0, skele4SL1, skele4SL2, skele4SL3, skele4SL4, skele4SL5, skele4SL6, skele4SL7];
+					skeleton4.AtkRight=[skele4SR0, skele4SR1, skele4SR2, skele4SR3, skele4SR4, skele4SR5, skele4SR6, skele4SR7];
+					skeletonBoss.AtkDown=[skeleBSD0, skeleBSD1, skeleBSD2, skeleBSD3, skeleBSD4, skeleBSD5, skeleBSD6, skeleBSD7];
+					skeletonBoss.AtkUp=[skeleBSU0, skeleBSU1, skeleBSU2, skeleBSU3, skeleBSU4, skeleBSU5, skeleBSU6, skeleBSU7];
+					skeletonBoss.AtkLeft=[skeleBSL0, skeleBSL1, skeleBSL2, skeleBSL3, skeleBSL4, skeleBSL5, skeleBSL6, skeleBSL7];
+					skeletonBoss.AtkRight=[skeleBSR0, skeleBSR1, skeleBSR2, skeleBSR3, skeleBSR4, skeleBSR5, skeleBSR6, skeleBSR7];
+					battleTimer.addEventListener(TimerEvent.TIMER, enemiesAtk);															//start listening for timer to check if monster should attack riku
+					battleTimer.start();																								//start monster attacking timer
+					monsterTimer.addEventListener(TimerEvent.TIMER, monstersFollow);													//start listening for timer to check if monster should follow riku
+					monsterTimer.start();																								//start monster following timer
+					dodgeStart=[dodge1, dodge2];																						//frames to make riku dodge
+					dodgeEnd=[dodge2, dodge2, dodge1];
+					TweenMax.resumeAll(true);
+					skeleDmg=dmg;
+				}
+			}
+			public function startIns(){								//go to INSTRUCTIONS
+				if (checkMM==true){										//if MainMenu buttons animations finishes...
+					chgScreen('Instructions');								//can go to Instructions
+				}
+			}
+			public function startCred(){							//go to CREDITS
+				if (checkMM==true){										//if MainMenu buttons animations finishes...
+					chgScreen('Credits');									//can go to Credits
+				}
+			}
+			public function pause(){													//PAUSE GAME FUNCTION
+				pausePage.alpha=1;															//Pause Page appears
+				pausePage.horizontalCenter=0;												//Pause Page moves to the middle of the screen
+				stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);			//unlistens to the Key Down Keyboard Event for keyDownControl
+				stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);				//unlistens to the Key Up Keyboard Event for keyUpControl
+				TweenMax.killAll(true, true, true);											//kills all Tweens
+			}
+			public function inventory(){												//OPENS UP INVENTORY BOX
+				invtPage.alpha=1;															//Inventory Page appears
+				invtPage.horizontalCenter=0;												//Inventory Page moves to the middle of the screen
+			}
+			public function resumeGame(){												//RESUME GAME FUNCTION
+				pausePage.alpha=0;															//Pause Page disappears
+				TweenMax.resumeAll(true, true, true);										//resumes all Tweens
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//listens to the Key Down Keyboard Event for keyDownControl
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//listens to the Key Up Keyboard Event for keyUpControl
+				pausePage.horizontalCenter=-955;											//moves the Pause Page outside of the screen
+				map.x=rikuXcheck;															//moves the PROTAGONIST to the marked x-coordinates
+				map.y=rikuYcheck;															//moves the PROTAGONIST to the marked y-coordinates
+			}
+			public function shopsReturn(){												//return from SKILLS page to map
+				currentState=previousState;													//transitions the current Screen to the previous State
+				map.x=rikuXcheck;															//moves the PROTAGONIST to the marked x-coordinates
+				map.y=rikuYcheck;															//moves the PROTAGONIST to the marked y-coordinates
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//can press key again
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//allows keyUp events
+			}
+			
+			//MISCELLANEOUS
+			public function playbgm(sound:Sound){					//plays selected sound
+				bgm=sound.play(0, 100);									//plays background music repeatedly	
+			}
+			public function stopbgm(){								//stops sound played
+				bgm.stop();												//stops background music
+			}
+			public function chgScreen(screen:String){				//change Screens/Maps
+				currentState=screen;									//changes state
+			}
+			public function gameIntro(){															//introduction story animations
+				var para1=[w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, 			//text on storyline
+					w16, w17, w18, w19, w20, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, 
+					w31, w32, w33, w34, w35, w36, w37, w38, w39, w40, w41, w42, w43, w44, w45,
+					w46, w47, w48, w49, w50, w51, w52, w53, w54, w55, w56, w57, w58, w59, w60, 
+					w61, w62, w63, w64, w65, w66, w67, w68, w69, w70, w71, w72, w73, w74, w75,
+					w76, w77, w78];																		
+				TweenMax.staggerFrom(para1, 1, {y:-stage.height}, 0.2);									//makes text animate onto screen
+				TweenMax.to(wallP, 20, {alpha:1});														//slowly makes background appear
+				story();																				//calls function to skip introduction
+				playbgm(intro);																			//plays the intro song for introduction
+			}
+			public function story(){											//triggers the skip timer
+				skipTimer.addEventListener(TimerEvent.TIMER, visibSkip);			//listens to timer beeps and calls a function
+				skipTimer.start();													//starts timer that makes skip button appear
+			}
+			public function visibSkip(evt:TimerEvent){				//makes skip button visible
+				TweenMax.to(skipBtn, 1, {alpha:1});						//skip button appears
+				skipBtn.enabled=true;									//skip button is enabled and clickable
+				skipTimer.stop();										//stops the skip timer
+			}
+			public function rikuDie(){								//for when PROTAGONIST dies
+				if (healthBar.scaleX<=0){								//if the health reaches 0...
+					chgScreen('GameOver');									//displays Game Over screen
+				}
+			}
+			public function mobDie(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){			//Monster death
+				if (mob.health<=rikuDmg){																	//if mob's health reaches 0
+					mob.alpha=0;																				//mob becomes invisible
+					mobColl.removeItem(mobCollDetect);															//removes the PROTAGONIST detector from the collision group
+					mob.x=0;																					//TO AVOID hitTestPoint from still functioning
+					mob.y=0;																					//TO AVOID hitTestPoint from still functioning
+					curr.text=String(Number(curr.text)+mob.gold);												//adds up coins in inventory
+					currInShop.text=String(Number(currInShop.text)+mob.gold);									//adds up coins in shop
+					expPoints.text=String(Math.round(Number(expPoints.text)+(Math.random()+20*1.5)));			//updates and adds experience
+					if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==100){				//if experience is equal to experience to move to next level && the requirement is 100...
+						rikuLvl.text="2";																			//make riku level 2
+						maxExp.text="200";																			//extend experience required to 200 for next level
+						expPoints.text="0";																			//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+					} else if (Number(expPoints.text)>=Number(maxExp.text) && Number(maxExp.text)==200){		//else if experience is equal to experience to move to next level && the requirement is 200...
+						rikuLvl.text="3";																			//make riku level 3
+						maxExp.text="400";																			//extend experience required to 400 for next level
+						expPoints.text="0";																			//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==400){			//else if experience is equal to experience to move to next level && the requirement is 400...
+						rikuLvl.text="4";																			//make riku level 4
+						maxExp.text="600";																			//extend experience required to 600 for next level
+						expPoints.text="0";																			//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==600){			//else if experience is equal to experience to move to next level && the requirement is 600...
+						rikuLvl.text="5";																			//make riku level 5
+						maxExp.text="800";																			//extend experience required to 800 for next level
+						expPoints.text="0";																			//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+					} else if (Number(expPoints.text)>Number(maxExp.text) && Number(maxExp.text)==800){			//else if experience is equal to experience to move to next level && the requirement is 800...
+						rikuLvl.text="6";																			//make riku level 6
+						maxExp.text="1000";																			//extend experience required to 1000 for next level
+						expPoints.text="0";																			//current experience points reset to 0
+						TweenMax.to(healthBar, 0, {scaleX:1});														//health is full again
+						TweenMax.to(manaBar, 0, {scaleX:1});														//mana is full again
+						TweenMax.to(staminaBar, 0, {scaleX:1});														//stamina is full again
+					}
+				}
+			}
+			public function mvListenerOff(){									//disables protagonist movement
+				AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);			//immediately removes listening for move down
+				AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);		//immediately removes listening for move right
+				AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);			//immediately removes listening for move up
+				AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);			//immediately removes listening for move left
+			}
+			
+			//BUY FUNCTIONS
+			public function buyPot(potions:Object, potionsVal:Object, value:int, 
+								   potionsValMerc:Object, slot:Object){									//Buying potions function
+				if (curr.text<String(value) && currInShop.text<String(value) 
+					&& potionsValMerc.text>"0"){															//if player has lesser than the required amount...
+					chefChatBox.text="Are you serious?? Not enough cash!!";										//NOT ENOUGH CASH SIR!!! 
+					curr.text="0";																				//resets current coins
+					currInShop.text="0";																		//resets current coins ( to counter negative value )
+				}
+				if (curr.text>=String(value) && currInShop.text>=String(value) 
+					&& potionsValMerc.text>"0"){															//if potions amount in shop and the PROTAGONIST's money is more than 0...
+					potionsValMerc.text=String(Number(potionsValMerc.text)-1);									//reduces the potions amount in shop
+					potionsVal.text=String(Number(potionsVal.text)+1);											//increases the potions amount in inventory
+					potionsVal.alpha=1;																			//makes the current potions amount visible
+					slot.alpha=1;																				//makes the slot visible
+					curr.text=String(Number(curr.text)-value);													//updates the currency in inventory page
+					currInShop.text=String(Number(currInShop.text)-value);										//updates the currency in shop pages
+					shopThanks(chefChatBox);																	//Merchant expresses gratitude
+				} else if (potionsValMerc.text<='0'){														//else if the potions amount in shop is 0...
+					chefChatBox.text="Out of stock, sorry";														//merchant says out of stock
+					potions.enabled=false;																		//makes the potion in shop not available
+				}
+			}
+			public function buySword(weapon:String, swordDmg:uint, value:int){							//Buying weapons function
+				if (curr.text>=String(value) && currInShop.text>=String(value)){							//If current money is enough or more...
+					curr.text=String(Number(curr.text)-value);													//reduces current money in inventory Page
+					currInShop.text=String(Number(currInShop.text)-value);										//reduces current money in shop page
+					sword.alpha=1;																				//makes sword slot in equpments page visible
+					sword.source=weapon;																		//changes the current sword
+					rikuDmg=swordDmg;																			//changes riku's damage
+					atkStats.text=String(rikuDmg);																//updates riku's damage status
+					shopThanks(blacksmithChatBox);																//ARIGATOU!
+				} else if (curr.text<String(value)&& currInShop.text<String(value)){						//else if insufficient coins...
+					blacksmithChatBox.text="Not enough coins? Aww too bad then.";								//YOU NO MONEY! GET OUTTA HERE
+				}
+			}
+			
+			//KEYBOARD EVENTS
+			public function keyUpControl(evt:KeyboardEvent){							//Keyboard button up events
+				if (evt.keyCode==87){														//if W is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);					// immediately stop listening for move up
+					mvOff();																	//removes all PROTAGONIST movement frames
+					CurrentUp=0;																//resets the mvUp frame
+					mvUp[CurrentUp].alpha=1;													//makes the mvUp current frame visible again
+				} else if (evt.keyCode==83){												//else if S is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);					// immediately stop listening for move down
+					mvOff();																	//removes all PROTAGONIST movement frames
+					CurrentDown=0;																//resets the mvDown frame
+					mvDown[CurrentDown].alpha=1;												//makes the mvDown current frame visible again
+				} else if (evt.keyCode==65){												//else if A is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);					// immediately stop listening for move left
+					mvOff();																	//removes all PROTAGONIST movement frames
+					CurrentLeft=0;																//resets the mvLeft frame
+					mvLeft[CurrentLeft].alpha=1;												//makes the mvLeft current frame visible again
+				} else if (evt.keyCode==68){												//else if D is released
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);				// immediately stop listening for move right
+					mvOff();																	//removes all PROTAGONIST movement frames
+					CurrentRight=0;																//resets the mvRight frame
+					mvRight[CurrentRight].alpha=1;												//makes the mvRight current frame visible again
+				} else if (evt.keyCode==75){	
+					if (Attacking==false){
+						AtkAgain=false;
+					}
+				}
+			}
+			public function keyDownControl(evt:KeyboardEvent){							//Keyboard button down events
+				if (evt.keyCode==87){														//if W key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Up);						//immediately listen for move up
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Down);					//immediately stop listening for move down
+				} else if (evt.keyCode==65){												//else if A key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Left);					//immediately listen for move left
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Right);				//immediately stop listening for move right
+				} else if (evt.keyCode==83){												//else if S key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Down);					//immediately listen for move down
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Up);					//immediately stop listening for move up
+				} else if (evt.keyCode==68){												//else if D key is pressed
+					AnimationTimer.addEventListener(TimerEvent.TIMER, Right);					//immediately listen for move right
+					AnimationTimer.removeEventListener(TimerEvent.TIMER, Left);					//immediately stop listening for move left
+				} else if (evt.keyCode==75){												//else if K is pressed
+					if (mvDown[0].alpha==1){													//if mvDown frame is visible...
+						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
+							Attacking=true;																//set as PROTAGONIST is attacking
+							AtkAgain=true;
+							mvOff();																	//removes all PROTAGONIST movement frames
+							mvListenerOff();															//unlistens to the Animation Timer for the movements
+							atkDown[0].alpha=1;															//makes first PROTAGONIST attackDown frame appear
+							AttackSD=0;																	//sets the first frame
+							AttackTimer.reset();														//resets the Attack Timer
+							AttackTimer.start();														//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeDown);					//listens to the Attack Timer for the PROTAGONIST strikeDown
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
+							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
+							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
+							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+						}
+					} else if (mvUp[0].alpha==1){												//else if mvUp frame is visible...
+						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
+							Attacking=true;																//set as PROTAGONIST is attacking
+							AtkAgain=true;
+							mvOff();																	//removes all PROTAGONIST movement frames
+							mvListenerOff();															//unlistens to the Animation Timer for the movements
+							atkUp[0].alpha=1;															//makes first PROTAGONIST attackUp frame appear
+							AttackSU=0;																	//sets the first frame
+							AttackTimer.reset();														//resets the Attack Timer
+							AttackTimer.start();														//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeUp);					//listens to the Attack Timer for the PROTAGONIST strikeUp
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
+							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
+							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
+							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+						}
+					} else if (mvLeft[0].alpha==1){												//else if mvLeft frame is visible...
+						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
+							Attacking=true;																//set as PROTAGONIST is attacking
+							AtkAgain=true;
+							mvOff();																	//removes all PROTAGONIST movement frames
+							mvListenerOff();															//unlistens to the Animation Timer for the movements
+							atkLeft[0].alpha=1;															//makes first PROTAGONIST attackLeft frame appear
+							AttackSL=0;																	//sets the first frame
+							AttackTimer.reset();														//resets the Attack Timer
+							AttackTimer.start();														//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeLeft);					//listens to the Attack Timer for the PROTAGONIST strikeLeft
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
+							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
+							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
+							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+						}
+					} else if (mvRight[0].alpha==1){											//else if mvRight frame is visible...
+						if (Attacking==false && AtkAgain==false){									//if PROTAGONIST is not attacking...
+							Attacking=true;																//set as PROTAGONIST is attacking
+							AtkAgain=true;
+							mvOff();																	//removes all PROTAGONIST movement frames
+							mvListenerOff();															//unlistens to the Animation Timer for the movements
+							atkRight[0].alpha=1;														//makes first PROTAGONIST attackRight frame appear
+							AttackSR=0;																	//sets the first frame
+							AttackTimer.reset();														//resets the Attack Timer
+							AttackTimer.start();														//starts the Attack Timer
+							AttackTimer.addEventListener(TimerEvent.TIMER, strikeRight);				//listens to the Attack Timer for the PROTAGONIST strikeRight
+							AttackTimer.addEventListener(TimerEvent.TIMER_COMPLETE, doneAttacking);		//listens to when the Attack Timer completes, the PROTAGONIST is done attacking
+							rikuAtk(skeleton1, skeleCollision1, collDetect1);							//allows the PROTAGONIST to attack skeleton #1
+							rikuAtk(skeleton2, skeleCollision2, collDetect2);							//allows the PROTAGONIST to attack skeleton #2
+							rikuAtk(skeleton3, skeleCollision3, collDetect3);							//allows the PROTAGONIST to attack skeleton #3
+							rikuAtk(skeleton4, skeleCollision4, collDetect4);							//allows the PROTAGONIST to attack skeleton #4
+							rikuAtk(skeletonBoss, skeleCollisionB, collDetectB);						//allows the PROTAGONIST to attack skeleton #Boss
+						}
+					}
+				} else if (evt.keyCode==80){													//else if P is pressed...
+					previousState=currentState;														//marks state/map
+					rikuXcheck=map.x;																//marks PROTAGONIST's x-coordinate
+					rikuYcheck=map.y;																//marks PROTAGONIST's y-coordinate
+					pause();																		//pauses game
+				} else if (evt.keyCode==73){													//else if I is pressed...
+					if (invtPage.horizontalCenter>0){												//if Inventory Page is outside the screen...
+						inventory();																	//opens inventory
+					} else {																		//else...
+						invtPage.horizontalCenter=1300;													//puts the Inventory Page to the outisde of the screen
+						invtPage.alpha=0;																//makes the Inventory Page invisbile
+					}
+				} else if (evt.keyCode==69){													//else if E is pressed...
+					var actCollisions:Array=interactCollision.checkCollisions();					//makes a variable to check for interact Collisions
+					if (actCollisions.length==0){													//if there are no collisions
+						TweenMax.fromTo(noObjRec, 2, {alpha:1}, {alpha:0});								//makes the no Object interactable text appear
+						TweenMax.to(objRec1, 0, {alpha:0});												//AVOIDS overlapping with text#1
+						TweenMax.to(objRec2, 0, {alpha:0});												//AVOIDS overlapping with text#2
+					}
+					if (actCollisions.length>0){													//if there is a collision...
+						var smObject:Object = actCollisions[0].object1;	 								//create a var to represent the small object
+						var lgObject:Object = actCollisions[0].object2;	 								//create a var to represent the large object
+						if (smObject==chestL||smObject==chestR||smObject==chestM2L){					//if PROTAGONIST is colliding with the small Chests...
+							openChest(smObject);															//opens the specific small Chest
+						} else if (lgObject==exit && currentState=='Map1'){								//else if leaving map 1...
+							chgScreen('Map2');																//change screen to map 2
+							skeleDmg=bossSkeleDmg;															//BOSS DAMAGE
+							skeletonBoss.alpha=1;															//BOSS reappears  visible
+							skeletonBoss.health=1000;														//boss health is reset
+							skeleCollisionB = new CollisionGroup(riku, collDetectB);						//boss and riku collision detector
+							interactCollision = new CollisionGroup(riku, chestM2L, 							//interactable objects in map 2
+								chestM2Scifi1, chestM2Scifi2, chestM2Scifi3, chestM2Scifi4,
+								chestM2Scifi5, exit, ladder1M2, ladder2M2, goMap1);
+							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];								//frames to animate chests in map 2		
+							chestM2Scifi1.frames=[chestM2U0, chestM2U1, chestM2U2, chestM2U3];			
+							chestM2Scifi2.frames=[chestM2U20, chestM2U21, chestM2U22, chestM2U23];		
+							chestM2Scifi3.frames=[chestM2U30, chestM2U31, chestM2U32, chestM2U33];		
+							chestM2Scifi4.frames=[chestM2U40, chestM2U41, chestM2U42, chestM2U43];		
+							chestM2Scifi5.frames=[chestM2U50, chestM2U51, chestM2U52, chestM2U53];		
+						} else if (lgObject==chestM2Scifi1||lgObject==chestM2Scifi2||					//else if PROTAGONIST is colliding with the large Chests...
+							lgObject==chestM2Scifi3||lgObject==chestM2Scifi4||							
+							lgObject==chestM2Scifi5 && smObject==riku){	 	
+							openChest(lgObject);															//opens the specific large Chest
+						} else if (lgObject==ladder1M2){												//else if PROTAGONIST is in contact with the #1 Map2 Ladder...
+							map.move(-3655, -880);															//moves to specific co-ordinates
+							stopbgm();																		//stops previous background music	
+							playbgm(map2B);																	//plays music for mini boss
+						} else if (lgObject==ladder2M2){												//else if PROTAGONIST is in contact with the #2 Map2...
+							stopbgm();																		//stop current background music
+							playbgm(map1);																	//play background music for map 1
+							map.move(-1060, -320);															//moves to specific co-ordinates
+						} else if (lgObject==goMap1 && currentState=='Map2'){							//else if PROTAGONIST is in contact with the entrance of Map2...
+							skeleDmg=dmg;																	//monster DAMAGE
+							chgScreen('Map1');																//transitions to Map1
+							skeleResetMap1();																//resets all the skeletons
+							interactCollision = new CollisionGroup(riku, chestL, chestR, exit);				//renews the interactCollision for Map1
+							interactCollision.removeItem(ladder1M2 && ladder2M2);							//removes the first ladder and second ladder in Map2
+							visibScreen.move(returnMap1.x+returnMap1.width/2,								//moves the visible Screen to the exit of Map1
+								returnMap1.y+returnMap1.height/2);						
+						} else if (lgObject==exit && currentState=='Map2'){								//else if PROTAGONIST is in contact with the exit of Map2...
+							stopbgm();																		//stops the background music
+							chgScreen('Map3');																//transitions to Map3
+							playbgm(map3);																	//plays the Map3 background music
+							safeZ = new CollisionGroup(riku, safeZone);										//sets the safeZone CollisionGroup
+							interactCollision = new CollisionGroup(riku, exit, blacksmithCollDetect,	 	//sets the new interactCollisionGroup
+								chefCollDetect, girlCollDetect, goMap2);	
+							mapCollision = new CollisionGroup(riku, noWalk, blacksmith, girl, chef);		//renews the mapCollisionGroup
+						} else if (lgObject==exit && currentState=='Map3'){								//else if you are at exit
+							if (skeletonBoss.health<=0){ 													//skeleton boss is dead
+								chgScreen('WinScreen');															//You Win the Game
+							}
+						} else if (lgObject==goMap2 && currentState=='Map3'){							//else if PROTAGONIST is in contact with the entrance of Map3...
+							stopbgm();																		//stops the background music
+							playbgm(map2B);																	//transitions to Map3
+							chgScreen('Map2');																//move to map 2
+							map.move(-4350, -940);															//positions map according to exit
+							mapCollision = new CollisionGroup(riku, noWalk);								//renews the mapCollisionGroup
+							interactCollision = new CollisionGroup(riku, chestM2L, chestM2Scifi1,			//renews possible interactions in map 2
+								chestM2Scifi2, chestM2Scifi3, chestM2Scifi4, chestM2Scifi5, exit, 
+								ladder1M2, ladder2M2, goMap1);
+							chestM2L.frames=[chestM2L0, chestM2L1, chestM2L2];								//frames for animating sci-fi chests
+							chestM2Scifi1.frames=[chestM2U0, chestM2U1, chestM2U2, chestM2U3];			
+							chestM2Scifi2.frames=[chestM2U20, chestM2U21, chestM2U22, chestM2U23];		
+							chestM2Scifi3.frames=[chestM2U30, chestM2U31, chestM2U32, chestM2U33];	
+							chestM2Scifi4.frames=[chestM2U40, chestM2U41, chestM2U42, chestM2U43];	
+							chestM2Scifi5.frames=[chestM2U50, chestM2U51, chestM2U52, chestM2U53];		
+						} else if (lgObject==girlCollDetect && girlDone==false){						//else if PROTAGONIST is talking to girl...
+							girlChat();																		//girl talks
+						} else if (lgObject==blacksmithCollDetect){										//else if PROTAGONIST is talking to blacksmith...
+							previousState=currentState;														//marks the state/map
+							rikuXcheck=map.x;																//marks the PROTAGONIST x-coordinates
+							rikuYcheck=map.y;																//markes the PROTAGONIST y-coordinates
+							chgScreen('BlacksmithShop');													//Transitions to the BlacksmithShop screen
+							blacksmithChat();																//blacksmith talks
+							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//disables keyDown events(disallow interactions while in shop)
+							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//disables keyUp events
+						} else if (lgObject==chefCollDetect){											//else if PROTAGONIST is talking to chef...
+							previousState=currentState;														//marks the state/map
+							rikuXcheck=map.x;																//marks the PROTAGONIST x-coordinates
+							rikuYcheck=map.y;																//markes the PROTAGONIST y-coordinates
+							chgScreen('Merchant');															//Transitions to the MerchantShop screen
+							chefChat();																		//chef merchant talks
+							stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//disables keyDown events(disallow interactions while in shop)
+							stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//disables keyUp events
+						}
+					}
+				} else if(evt.keyCode==32){															//else if the spacebar is pressed...
+					if (mvDown[CurrentDown].alpha==1){													//if riku is moving down...
+						if (Attacking==false){																//if riku is not attacking...
+							if (dodging==false){																//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
+									dodging=true;																		//riku is dodging
+									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
+									mvOff();																			//changes all moving frames of riku to alpha 0
+									mvListenerOff();																	//stop listening to key presses for riku moving
+									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeDown, 							//animates frames for dodging and calls function to move riku
+										onCompleteParams:[0, dodgeStart]});
+									staminaDecrease();																	//animates stamina bar to decrease to 0
+									dirDodge="D";																		//marks direction dodged in
+								}
+							}
+						}
+					} else if (mvUp[CurrentUp].alpha==1){												//else if riku is moving up...
+						if (Attacking==false){																//if riku is not attacking...
+							if (dodging==false){																//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
+									dodging=true;																		//riku is dodging
+									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
+									mvOff();																			//changes all moving frames of riku to alpha 0
+									mvListenerOff();																	//stop listening to key presses for riku moving
+									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeUp,  							//animates frames for dodging and calls function to move riku
+										onCompleteParams:[0, dodgeStart]});
+									staminaDecrease();																	//animates stamina bar to decrease to 0
+									dirDodge="U";;																		//marks direction dodged in
+								}
+							}
+						}
+					} else if (mvLeft[CurrentLeft].alpha==1){											//else if riku is moving left...
+						if (Attacking==false){																//if riku is not attacking...
+							if (dodging==false){																//if riku is not dodging initially...
+								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
+									dodging=true;																		//riku is dodging
+									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
+									mvOff();																			//changes all moving frames of riku to alpha 0
+									mvListenerOff();																	//stop listening to key presses for riku moving
+									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeLeft,  							//animates frames for dodging and calls function to move riku
+										onCompleteParams:[0, dodgeStart]});
+									staminaDecrease();																	//animates stamina bar to decrease to 0
+									dirDodge="L";																		//marks direction dodged in
+								}
+							}
+						}
+					} else if (mvRight[CurrentRight].alpha==1){											//else if riku is moving up...
+						if (Attacking==false){																//if riku is not attacking...
+							if (dodging==false){																//if riku is not dodging initially
+								if (staminaBar.scaleX>0){															//if stamina bar is not empty...
+									dodging=true;																		//riku is dodging
+									stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpControl);						//stop listening for key releases
+									mvOff();																			//changes all moving frames of riku to alpha 0
+									mvListenerOff();																	//stop listening to key presses for riku moving
+									stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);					//stops listening for key presses
+									TweenMax.to(dodge1, 0.2, {alpha:1, onComplete:dodgeRight,  							//animates frames for dodging and calls function to move riku
+										onCompleteParams:[0, dodgeStart]});
+									staminaDecrease();																	//animates stamina bar to decrease to 0
+									dirDodge="R";																		//marks direction dodged in
+								}
+							}
+						}
+					}
+				} else if(evt.keyCode==49){															//else if 1 is pressed...
+					if (healthBar.scaleX>=(1-0.3) && hpPotVal.text>'0'){								//if current health is maximum or above and current health Pot value is more than 0...
+						hpPotVal.text=String(Number(hpPotVal.text)-1);										//decreases the current health Pot value
+						healthBar.scaleX=1;																	//makes the healthBar maximum
+						objRec1.text="1 health potion used";												//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					} else if (hpPotVal.text<='0'){														//else if current health Pot value is 0
+						hpPotVal.text='0';																	//disallows the current health Pot value to go negative value
+						objRec1.text="No health potions available";											//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					}
+					if (healthBar.scaleX<(1-0.3) && hpPotVal.text>'0'){									//else if current health is below maximum and current health Pot value is more than 0...
+						hpPotVal.text=String(Number(hpPotVal.text)-1);										//decreses the current health Pot value
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX+=0.3});							//PROTAGONIST heals
+						objRec1.text="1 health potion used";												//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					}
+				} else if(evt.keyCode==50){															//else if 2 is pressed...
+					if (manaPotVal.text<='0'){															//if current mana Pot value is 0
+						manaPotVal.text='0';																//disallows the current mana Pot value to go negative value
+						objRec2.text="No mana potions available";											//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					}
+					if (manaBar.scaleX>=1 && manaPotVal.text>'0'){										//if current mana is maximum or above and current mana Pot value is more than 0...
+						manaPotVal.text=String(Number(manaPotVal.text)-1);									//decreses the current mana Pot value
+						manaBar.scaleX=1;																	//makes the manaBar maximum
+						objRec2.text="1 mana potion used";													//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					} else if (manaBar.scaleX<1 && manaPotVal.text>'0'){								//else if current mana is below maximum and current mana Pot value is more than 0...
+						manaPotVal.text=String(Number(manaPotVal.text)-1);									//decreses the current health Pot value
+						TweenMax.to(manaBar, 1, {scaleX:manaBar.scaleX+=0.3});								//PROTAGONIST replenishes mana
+						objRec2.text="1 mana potion used";													//changes the text #2
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});									//makes the text #2 appear
+						TweenMax.to(objRec1, 0, {alpha:0});													//AVOIDS overlapping with text #1
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					}
+				} else if(evt.keyCode==48){															//else if 0 is pressed...
+					if (staminaPotVal.text<='0'){														//if current stamina Pot value is 0
+						staminaPotVal.text='0';																//disallows the current stamina Pot value to go negative value
+						objRec1.text="No stamina potions available";										//changes the text #1
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
+						TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
+						TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+					}
+					if ((staminaBar.scaleX>=1 || staminaBar.scaleX<1) 	
+							&& staminaPotVal.text>'0'){													//if current stamina is maximum or above and current stamina Pot value is more than 0...
+						if (dodging==true){																	//if riku is not dodging currently
+							staminaPotVal.text=String(Number(staminaPotVal.text)-1);							//decreases the current stamina Pot value
+							staminaBar.scaleX=1;																//makes the staminaBar maximum instantly
+							objRec1.text="1 stamina potion used";												//changes the text #1
+							TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});									//makes the text #1 appear
+							TweenMax.to(objRec2, 0, {alpha:0});													//AVOIDS overlapping with text #2
+							TweenMax.to(noObjRec, 0, {alpha:0});												//AVOIDS overlapping with no object interactable text
+							TweenMax.killTweensOf(staminaBar, true);											//to kill the tweens of the staminaBar regenerating
+							dodging=false;																		//marks riku as not dodging anymore(to allow dodging again)
+						}
+					}
+				}
+			}
+			
+			//NPC CONVERSATIONS
+			public function girlChat(){														//girl's conversation with PROTAGONIST		
+				var randomGChat:Number = Math.random();											//randomizer for girl's lines
+				if (randomGChat <= 1/6){
+					girlChatBox.text="Umm... who are you?";
+				} else if (randomGChat <= 2/6){
+					girlChatBox.text="Hmm? What do you need?";
+				} else if (randomGChat <= 3/6){
+					girlChatBox.text="You don't look like you're from around here...";
+				} else if (randomGChat <= 4/6){
+					girlChatBox.text="Wah! You surprised me!";
+				} else if (randomGChat <= 5/6){
+					girlChatBox.text="How did you get pass the skeleton boxing king?";
+				} else if (randomGChat <= 1){
+					girlChatBox.text="Wow, you came from that skeleton-infested area?";
+				}
+				girlDone=true;																	//girl starts babbling
+				TweenMax.fromTo(girlChatBox, 4, {alpha:1}, {alpha:0, onComplete:girlChatDone});	//girl's chatBox appears
+				TweenMax.to(noObjRec, 0, {alpha:0});											//PREVENTS overlapping with no object interactable text
+				TweenMax.to(objRec1, 0, {alpha:0});												//PREVETS overlapping with text#1
+				TweenMax.to(objRec2, 0, {alpha:0});												//PREVENTS overlapping with text#2
+			}
+			public function blacksmithChat(){						//blacksmith's conversation with PROTAGONIST
+				var randomBChat:Number = Math.random();					//randomizer for Blacksmith's lines
+				if (randomBChat <= 1/6){
+					blacksmithChatBox.text="Hello there! Would you like to purchase some items?";
+				} else if (randomBChat <= 2/6){
+					blacksmithChatBox.text="Heyyo! Would you spend some dosh for my goods?";
+				} else if (randomBChat <= 3/6){
+					blacksmithChatBox.text="A strong man like you needs equipments!";
+				} else if (randomBChat <= 4/6){
+					blacksmithChatBox.text="I make the best quality equipments.";
+				} else if (randomBChat <= 5/6){
+					blacksmithChatBox.text="What are you buying?";
+				} else if (randomBChat <= 1){
+					blacksmithChatBox.text="Welcome to my expen- I mean cheap weaponries!";
+				}
+			}
+			public function chefChat(){								//chef/merchant's conversation with PROTAGONIST
+				var randomCChat:Number = Math.random();					//randomizer for merchant's lines
+				if (randomCChat <= 1/6){
+					chefChatBox.text="You can't fight with an empty stomach!";
+				} else if (randomCChat <= 2/6){
+					chefChatBox.text="Drown yourself in my potions.";
+				} else if (randomCChat <= 3/6){
+					chefChatBox.text="I care for your health; so buy my potions!";
+				} else if (randomCChat <= 4/6){
+					chefChatBox.text="Shake it; not stir it.";
+				} else if (randomCChat <= 5/6){
+					chefChatBox.text="Care for some refreshments?";
+				} else if (randomCChat <= 1){
+					chefChatBox.text="You look injured. Care for some potions?";
+				}
+			}
+			public function girlChatDone(){							//for onComplete girl's chatbox Tween
+				girlDone=false;											//girl is ready to talk again
+			}
+			public function shopThanks(vendor:Object){				//for merchant gratitude
+				var randomThanks:Number = Math.random();				//randomizer for shopkeeper's lines
+				if (randomThanks <= 1/6){
+					vendor.text="Come and spend your yellows here again! You won't regret it!";
+				} else if (randomThanks <= 2/6){
+					vendor.text="Let me express my gratitude; Thank you!";
+				} else if (randomThanks <= 3/6){
+					vendor.text="I can feed my kids now!";
+				} else if (randomThanks <= 4/6){
+					vendor.text="Another day, another earning";
+				} else if (randomThanks <= 5/6){
+					vendor.text="Thanks for purchasing my items!! It really helps";
+				} else if (randomThanks <= 1){
+					vendor.text="Oh why, thank you kind sir!";
+				}
+			}
+			
+			//OPENING CHEST FUNCTION
+			public function openChest(chest:Object){										//Open chests+items inside text appearing
+				if (chest.open==false){															//if chest is closed...
+					chest.open=true;																//chest is opened
+					animate(0, chest.frames, 0.1);													//animate the chest from the first frame to the last
+					if (chest.health>0){															//if chest contains health pots...
+						objRec1.text="You have received "+chest.health+" health potions";				//change the first label for object received
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});								//health potions received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						hpPotVal.text=String(Number(hpPotVal.text)+chest.health);						//updates the health pots quantity
+						slot1.alpha=1;																	//Makes the health pot image visible
+						hpPotVal.alpha=1;																//Makes the health pots quantity visible\
+						
+					}
+					if (chest.mana>0){																//if chest contains mana pots...
+						objRec2.text="You have received "+chest.mana+" mana potions";					//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//mana potions received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						manaPotVal.text=String(Number(manaPotVal.text)+chest.mana);						//updates the mana pots quantity
+						slot2.alpha=1;																	//Makes the mana pot image visible
+						manaPotVal.alpha=1;																//Makes the mana pot quantity visible
+					}
+					if (chest.gold>0){																//if chest contains gold coins...
+						objRec1.text="You have received "+chest.gold+" gold coins";						//change the first label for object received
+						TweenMax.fromTo(objRec1, 2, {alpha:1}, {alpha:0});								//gold coins received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						curr.text=String(Number(curr.text)+chest.gold);									//updates the currency in inventory page
+						currInShop.text=String(Number(currInShop.text)+chest.gold);						//updates the currency in shop pages
+					}
+					if (chest.chestArmour=="assets/chestA1.png"){									//if chest contains chest Armor1
+						objRec2.text="You have received XGrim";											//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//chest armor received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						chestPiece.alpha=1;																//chestPiece slot for PROTAGONIST equipment appears
+						rikuDef=10;																		//boosts up riku's defense
+						armorStats.text=String(rikuDef);												//updates riku's defence stats
+					}
+					if (chest.boots=="assets/boots1.png"){											//if chest contains boots1
+						objRec2.text="You have received XGrimWalker";									//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//boots received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						bootsPiece.alpha=1;																//bootsPiece slot for PROTAGONIST equipment appears
+						spd=20;																			//boosts up riku's speed
+						spdStats.text=String(spd);														//updates riku's movement speed stats
+					}
+					if (chest.ring=="assets/ring1.png"){											//if chest contains ring1
+						objRec2.text="You have received XRing";											//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//ring received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						ringPiece.alpha=1;																//ringPiece slot for PROTAGONIST equpment appears
+						TweenMax.to(riku, 3, {glowFilter:{color:0x000000, alpha:1, blurX:10, 
+											blurY:10, strength:2}, ease:Circ.easeOut});					//makes PROTAGONIST GLOW
+					}
+					if (chest.weapon=="assets/weapon1.png"){										//if chest contains weapon1
+						objRec2.text="You have received XCaliber";										//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//weapon received text appears	
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						sword.alpha=1;																	//sword slot for PROTAGONIST equipment appears
+						rikuDmg=15;																		//changes riku's damage
+						atkStats.text=String(rikuDmg);													//updates riku's attack stats
+					}
+					if (chest.helmet=="assets/robe1.png"){											//if chest contains robe1
+						objRec2.text="You have received XCloak";										//change the second label for object received
+						TweenMax.fromTo(objRec2, 2, {alpha:1}, {alpha:0});								//robe received text appears
+						TweenMax.to(noObjRec, 0, {alpha:0});											//AVOIDS overlapping with no object found text
+						helmetPiece.alpha=1;															//helmetPiece slot for PROTAGONIST equipment appears
+						riku.alpha=0.5;																	//makes riku partially invisible
+					}
+				}
+			}
+			
+			//DODGE SKILL
+			public function dodgeLeft (currentFrame:uint, frame:Array){			//makes riku dodge left (initial dodging frames)
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;														//moves to next frame
+				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
+						{alpha:1, onComplete:dodgeLeft, 
+							onCompleteParams:[currentFrame, frame]});
+				} else {															//else...
+					map.x+=dash;														//move riku to the left (riku is transparent)
+					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				}
+			}
+			public function dodgeRight (currentFrame:uint, frame:Array){		//makes riku dodge right (initial dodging frames)
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;														//moves to next frame
+				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
+						{alpha:1, onComplete:dodgeRight, 		
+							onCompleteParams:[currentFrame, frame]});
+				} else {															//else...
+					map.x-=dash;														//move riku to the right (riku is transparent)
+					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				}
+			}
+			public function dodgeUp (currentFrame:uint, frame:Array){			//makes riku dodge up (initial dodging frames)
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;														//moves to next frame
+				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
+						{alpha:1, onComplete:dodgeUp, 
+							onCompleteParams:[currentFrame, frame]});
+				} else {															//else...
+					map.y+=dash;														//move riku to the up (riku is transparent)
+					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				}
+			}
+			public function dodgeDown (currentFrame:uint, frame:Array){			//makes riku dodge down (initial dodging frames)
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});					//makes visibility starting dodge frame to 0 (transparent)
+				currentFrame++;														//moves to next frame
+				if (currentFrame<frame.length){										//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, 				//make frame visibility to 1 (opaque) and recalls function
+						{alpha:1, onComplete:dodgeDown, 
+							onCompleteParams:[currentFrame, frame]});
+				} else {															//else...
+					map.y-=dash;														//move riku to the down (riku is transparent)
+					dodgeDone(0, dodgeEnd);												//call function to animate end of dodging 
+				}
+			}
+			public function dodgeDone (currentFrame:uint, frame:Array){					//animates end dodging frames
+				TweenMax.to(frame[currentFrame], 0.2, {alpha:0});							//make (final frame of starting dodge=first frame of ending dodge) transparent
+				currentFrame++;																//move to next frame
+				if (currentFrame<frame.length){													//if current frame is less than dodging array length...
+					TweenMax.fromTo(frame[currentFrame], 0.2, {alpha:0}, {alpha:1, 				//make frame visibility to 1 (opaque) and recalls function
+						onComplete:dodgeDone, onCompleteParams:[currentFrame, frame]});	
+				} else {																	//else...
+					dodgeReset();																//allows riku to move and animates stamina bar to default size
+				}
+			}
+			public function dodgeReset (){												//allows riku to move and animates stamina bar to default size
+				stage.addEventListener(KeyboardEvent.KEY_UP, keyUpControl);					//starts listening for key releases 
+				stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownControl);				//starts listening for key presses
+				if (dirDodge=="U"){
+					mvUp[0].alpha=1;															//make default frame of riku visible
+				} else if (dirDodge=="D"){
+					mvDown[0].alpha=1;															//make default frame of riku visible
+				} else if (dirDodge=="L"){
+					mvLeft[0].alpha=1;															//make default frame of riku visible
+				} else if (dirDodge=="R"){
+					mvRight[0].alpha=1;															//make default frame of riku visible
+				}
+				undoDodge();																//makes sure riku does not dodge onto no walking areas
+				if (staminaBar.scaleX==0){													//if stamina bar is 0 (empty)
+					TweenMax.fromTo(staminaBar, 5, {scaleX:0}, 									//animate||refill stamina bar to default state (full)
+						{scaleX:1, onComplete:repeatDodge});	
+				}
+			}
+			public function undoDodge (){									//makes riku move back if riku lands on no walking area
+				var mvColls:Array = mapCollision.checkCollisions();				//checks if riku collides with no walking areas
+				if (dirDodge=="L"){												//if riku dodged left...
+					if (mvColls.length>0){											//if riku lands onto a no walking area...
+						map.x-=dash;													//make riku move back
+					}
+				}
+				if (dirDodge=="R"){												//if riku dodged right...
+					if (mvColls.length>0){											//if riku lands onto a no walking area...
+						map.x+=dash;													//make riku move back
+					}
+				}
+				if (dirDodge=="U"){													//if riku dodged up...
+					if (mvColls.length>0){											//if riku lands onto a no walking area...
+						map.y-=dash;													//make riku move back
+					}
+				}
+				if (dirDodge=="D"){												//if riku dodged down...
+					if (mvColls.length>0){											//if riku lands onto a no walking area...
+						map.y+=dash;													//make riku move back
+					}
+				}
+			}
+			public function repeatDodge (){				//resets dodge checker
+				dodging=false;								//changes checker to default so riku can dodge again
+			}
+			public function staminaDecrease (){			//decreases stamina bar to 0
+				if (staminaBar.scaleX==1){					//if stamina bar is full...
+					TweenMax.fromTo(staminaBar, 0.5, 			//animate stamina bar to decrease to 0
+						{scaleX:1}, {scaleX:0});
+				}
+			}
+			
+			//PROTAGONIST MOVEMENTS + ANIMATIONS
+			public function Up(evt:TimerEvent){						//move UP
+				mvOff();												//removes all the PROTAGONIST movement frames
+				map.y+=spd;												//drags the map down
+				CurrentUp++;											//increases the currentUp frame for PROTAGONIST
+				if (CurrentUp==mvUp.length){							//if currentUp frame is last...
+					CurrentUp=1;											//sets the movement frame to the PROTAGONIST moving frame
+				}
+				mvUp[CurrentUp].alpha=1;								//makes the mvUp frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();		//checks the mapCollision
+				if (mvColls.length>0){									//if PROTAGONIST is at the edge
+					map.y-=spd;												//pushes PROTAGONIST back
+				}
+				var safeArea:Array = safeZ.checkCollisions();			//checks for safeZone collision
+				if (safeArea.length>0){									//if there is a collision...
+					if (safebgm==false){									//if the safeZone background music is not playing
+						stopbgm();												//stops background music
+						playbgm(town);											//plays the town background music
+						safebgm=true;											//background music is playing
+					}
+				} else if (safeArea.length==0){							//if there is no collision...
+					if (safebgm==true){										//if the safeZone background music is still playing
+						stopbgm();												//stops the music
+						playbgm(map3);											//plays the map3 background music
+						safebgm=false;											//sets the background music as not playing
+					}
+				}
+			}
+			public function Down(evt:TimerEvent){						//move DOWN
+				mvOff();													//removes all the PROTAGONIST movement frames
+				map.y-=spd;													//drags the map up
+				CurrentDown++;												//increases the currentDown frame for PROTAGONIST
+				if (CurrentDown==mvDown.length){							//if currentDown frame is last...
+					CurrentDown=1;												//sets the movement frame to the PROTAGONIST moving frame
+				}
+				mvDown[CurrentDown].alpha=1;								//makes the mvDown frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
+				if (mvColls.length>0){										//if PROTAGONIST is at the edge
+					map.y+=spd;													//pushes PROTAGONIST back	
+				}
+				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
+				if (safeArea.length>0){										//if there is a collision...
+					if (safebgm==false){										//if the safeZone background music is not playing...
+						stopbgm();													//stops background music
+						playbgm(town);												//plays the town background music
+						safebgm=true;												//background music is playing
+					}
+				} else if (safeArea.length==0){								//else if there is no collision...
+					if (safebgm==true){											//if the safeZone background music is still playing...
+						stopbgm();													//stops the music
+						playbgm(map3);												//plays the map3 background music
+						safebgm=false;												//sets the background music as not playing
+					}
+				}
+			}
+			public function Left(evt:TimerEvent){						//move LEFT
+				mvOff();													//removes all the PROTAGONIST movement frames
+				map.x+=spd;													//drags the map right
+				CurrentLeft++;												//increases the currentLeft frame for PROTAGONIST
+				if (CurrentLeft==mvLeft.length){							//if currentLeft frame is last...
+					CurrentLeft=1;												//sets the movement frame to the PROTAGONIST moving frame
+				}
+				mvLeft[CurrentLeft].alpha=1;								//makes the mvLeft frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
+				if (mvColls.length>0){										//if PROTAGONIST is at the edge
+					map.x-=spd;													//pushes PROTAGONIST back
+				}
+				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
+				if (safeArea.length>0){										//if there is a collision...
+					if (safebgm==false){										//if the safeZone background music is not playing
+						stopbgm();													//stops background music
+						playbgm(town);												//plays the town background music
+						safebgm=true;												//background music is playing
+					}
+				} else if (safeArea.length==0){								//if there is no collision...
+					if (safebgm==true){											//if the safeZone background music is still playing
+						stopbgm();													//stops the music
+						playbgm(map3);												//plays the map3 background music
+						safebgm=false;												//sets the background music as not playing
+					}
+				}
+			}
+			public function Right(evt:TimerEvent){						//move RIGHT
+				mvOff();													//removes all the PROTAGONIST movement frames
+				map.x-=spd;													//drags the map left
+				CurrentRight++;												//increases the currentRight frame for PROTAGONIST
+				if (CurrentRight==mvRight.length){							//if currentRight frame is last...
+					CurrentRight=1;												//sets the movement frame to the PROTAGONIST moving frame
+				}
+				mvRight[CurrentRight].alpha=1;								//makes the mvRight frame visible 
+				var mvColls:Array = mapCollision.checkCollisions();			//checks the mapCollision
+				if (mvColls.length>0){										//if PROTAGONIST is at the edge
+					map.x+=spd;													//pushes PROTAGONIST back
+				}
+				var safeArea:Array = safeZ.checkCollisions();				//checks for safeZone collision
+				if (safeArea.length>0){										//if there is a collision...
+					if (safebgm==false){										//if the safeZone background music is not playing
+						stopbgm();													//stops background music
+						playbgm(town);												//plays the town background music
+						safebgm=true;												//background music is playing
+					}
+				} else if (safeArea.length==0){								//if there is no collision...
+					if (safebgm==true){											//if the safeZone background music is still playing
+						stopbgm();													//stops the music
+						playbgm(map3);												//plays the map3 background music
+						safebgm=false;												//sets the background music as not playing
+					}
+				}
+			}
+			
+			//PROTAGONIST ATTACK ANIMATIONS
+			public function strikeDown(evt:TimerEvent){					//attack DOWN
+				atkDown[AttackSD].alpha=0;									//set the current atkDown frame invisible
+				AttackSD++;													//increases the current atkDown frame
+				if (AttackSD<atkDown.length){								//if current atkDown frame is not last...
+					atkDown[AttackSD].alpha=1;									//sets the current atkDown frame visible
+				} else { 													//else if current atkDown frame is last...
+					mvDown[0].alpha=1;											//makes the first mvDown frame visible
+				}
+			}	
+			public function strikeUp(evt:TimerEvent){					//attack UP
+				atkUp[AttackSU].alpha=0;									//set the current atkUp frame invisible
+				AttackSU++;													//increases the current atkUp frame
+				if (AttackSU<atkUp.length){									//if current atkUp frame is not last...
+					atkUp[AttackSU].alpha=1;									//sets the current atkUp frame visible
+				} else { 													//else if current atkUp frame is last...
+					mvUp[0].alpha=1;											//makes the first mvUp frame visible
+				}
+			}
+			public function strikeLeft(evt:TimerEvent){					//attack LEFT
+				atkLeft[AttackSL].alpha=0;									//set the current atkLeft frame invisible
+				AttackSL++;													//increases the current atkLeft frame
+				if (AttackSL<atkLeft.length){								//if current atkLeft frame is not last...
+					atkLeft[AttackSL].alpha=1;									//sets the current atkLeft frame visible
+				} else {													//else if current atkLeft frame is last...
+					mvLeft[0].alpha=1;											//makes the first mvLeft frame visible
+				}
+			}
+			public function strikeRight(evt:TimerEvent){				//attack RIGHT
+				atkRight[AttackSR].alpha=0;									//set the current atkRight frame invisible
+				AttackSR++;													//increases the current atkRight frame
+				if (AttackSR<atkRight.length){								//if current atkRight frame is not last...
+					atkRight[AttackSR].alpha=1;									//sets the current atkRight frame visible
+				} else {													//else if current atkRight frame is last...
+					mvRight[0].alpha=1;											//makes the first mvRight frame visible
+				}
+			}
+			public function rikuAtk(mob:Object, mobColl:CollisionGroup, mobCollDetect:Object){		//helper function (riku attacks mobs)
+				if (riku.hitTestPoint(mob.x+mob.width/2+visibScreen.x+map.x, 
+												mob.y+visibScreen.y+map.y)){							//if Riku is attacking the mob directly...
+					if (sword.alpha==1 && sword.source=="assets/weapon1.png"){								//if Riku obtains sword1....
+						TweenMax.fromTo(mob, 0.5, {tint:0x9999cc}, {tint:null});								//damage color is dull purple
+					} else if (sword.source=="assets/weapon2.png"){											//else if Riku obtains iceSword(sword2)... 
+						TweenMax.fromTo(mob, 0.5, {tint:0x66ffff}, {tint:null});								//damage color is ice(teal)
+					} else if (sword.source=="assets/weapon3.png"){											//else if Riku obtains fireSword(sword3)...
+						TweenMax.fromTo(mob, 0.5, {tint:0xff6600}, {tint:null});								//damage color is fire(orange)
+					} else if (sword.source=="assets/weapon4.png"){											//else if Riku obtains poisonSword(sword4)...
+						TweenMax.fromTo(mob, 0.5, {tint:0x660066}, {tint:null});								//damage color is poison(purple)
+					} else {																					//else riku is using default weapon...
+						TweenMax.fromTo(mob, 0.5, {tint:0xff0000}, {tint:null});								//damaged is notified (tint).
+					}
+					mobDie(mob, mobColl, mobCollDetect);														//mob follows the mobDie function
+					mob.health-=rikuDmg;																		//mob's health decreases according to PROTAGONIST's damage
+				}
+			}
+			
+			//INTERACTABLE OBJECTS ANIMATIONS
+			public function animate(currentFrame:uint, frame:Array, time:Number){					//ANIMATION function
+				TweenMax.to(frame[currentFrame], time, {alpha:0});										//makes the current frame disappear
+				currentFrame++;																			//increases the current frame
+				if (currentFrame<frame.length-1){														//if the current frame is not the last...
+					TweenMax.fromTo(frame[currentFrame], time, {alpha:0},									//animates the object
+						{alpha:1, onComplete:animate, onCompleteParams:[currentFrame, frame, time]});		
+				} else {																					//else...
+					TweenMax.to(frame[currentFrame], time, {alpha:1});										//makes the current frame visible
+				}
+			}
+			
+			//ANIMATIONS DONE
+			public function doneAttacking(evt:TimerEvent){			//for onComplete Tween for attacking Tween
+				Attacking=false;										//PROTAGONIST is done attacking
+			}
+			public function mvOff(){								//removes all PROTAGONIST movement frames
+				mvUp[CurrentUp].alpha=0;								//sets the mvUp frame invisible
+				mvDown[CurrentDown].alpha=0;							//sets the mvDown frame invisible
+				mvRight[CurrentRight].alpha=0;							//sets the mvRight frame invisible
+				mvLeft[CurrentLeft].alpha=0;							//sets the mvLeft frame invisible
+			}
+			public function doneAttackingE (monster:Skeleton){		//for onComplete Tween for mob attacking Tween
+				monster.Attacking=false;								//Monster is done attacking
+				monsterTimer.start();									//starts the monster following animation Timer
+				battleTimer.start();									//starts the monster attacking animation Timer
+			}
+			public function skeleOff(skeleton:Skeleton){			//removes all skeleton movement frames
+				skeleton.Right[skeleton.frameR].alpha=0;				//sets the skeleton mvRight frame invisible
+				skeleton.Left[skeleton.frameL].alpha=0;					//sets the skeleton mvLeft frame invisible
+				skeleton.Up[skeleton.frameU].alpha=0;					//sets the skeleton mvUp frame invisible
+				skeleton.Down[skeleton.frameD].alpha=0;					//sets the skeleton mvDown rame invisible
+			}
+			
+			//MOBS ANIMATIONS
+			public function mvSkeletonL(skeleton:Skeleton){		//animate monster moving left
+				skeleton.Left[skeleton.frameL].alpha=0;				//make initial frame transparent
+				skeleton.frameL++;									//move to next frame
+				if (skeleton.frameL==skeleton.Left.length){			//if current frame is equal to the left monster array length...		
+					skeleton.frameL=0;									//make frame of monster default (0)
+				}
+				skeleton.Left[skeleton.frameL].alpha=1;				//make frame opaque
+			}
+			public function mvSkeletonR(skeleton:Skeleton){		//animate monster moving right
+				skeleton.Right[skeleton.frameR].alpha=0;			//make initial frame transparent
+				skeleton.frameR++;									//move to next frame
+				if (skeleton.frameR==skeleton.Right.length){		//if current frame is equal to the right monster array length...		
+					skeleton.frameR=0;									//make frame of monster default (0)
+				}
+				skeleton.Right[skeleton.frameR].alpha=1;			//make frame opaque
+			}
+			public function mvSkeletonU(skeleton:Skeleton){		//animate monster moving up
+				skeleton.Up[skeleton.frameU].alpha=0;				//make initial frame transparent
+				skeleton.frameU++;									//move to next frame
+				if (skeleton.frameU==skeleton.Up.length){			//if current frame is equal to the up monster array length...		
+					skeleton.frameU=0;									//make frame of monster default (0)
+				}
+				skeleton.Up[skeleton.frameU].alpha=1;				//make frame opaque
+			}
+			public function mvSkeletonD(skeleton:Skeleton){		//animate monster moving down
+				skeleton.Down[skeleton.frameD].alpha=0;				//make initial frame transparent
+				skeleton.frameD++;									//move to next frame
+				if (skeleton.frameD==skeleton.Down.length){			//if current frame is equal to the down monster array length...		
+					skeleton.frameD=0;									//make frame of monster default (0)
+				}
+				skeleton.Down[skeleton.frameD].alpha=1;				//make frame opaque
+			}
+			public function monstersFollow(evt:TimerEvent){		//function frequently called to make monster follow riku if in radius
+				monsterFollow(skeleton1, skeleCollision1);			//makes monster1 follow riku if in radius
+				monsterFollow(skeleton2, skeleCollision2);			//makes monster2 follow riku if in radius
+				monsterFollow(skeleton3, skeleCollision3);			//makes monster3 follow riku if in radius
+				monsterFollow(skeleton4, skeleCollision4);			//makes monster4 follow riku if in radius
+				monsterFollow(skeletonBoss, skeleCollisionB);		//makes skeletonBoss follow riku if in radius
+			}
+			public function monsterFollow(monster:Skeleton, monsterCollision:CollisionGroup){		//makes monster follow riku when in radius
+				var skeleColls:Array = monsterCollision.checkCollisions();								//variable used to check if there are collisions between riku and monster
+				if (skeleColls.length>0){																//if there is a collision...
+					var smObject:Object = skeleColls[0].object1;											//create a var to represent the small object
+					var lgObject:Object = skeleColls[0].object2;	 									 	//create a var to represent the large object
+					if (riku==smObject && riku.x>monster.x+map.x && monster.Attacking==false){				//if riku is the small object in collision && riku is more to the right than the monster && monster is not attacking...
+						skeleOff(monster);																		//makes current frame of monster transparent
+						mvSkeletonR(monster);																	//calls function to animate monster as it moves right towards riku
+						if (riku.x>monster.x+map.x+spd){														//if riku is still more to the right even when monster moves towards riku...
+							monster.x+=spd;																			//make monster still move right
+						} else {																				//else...
+							monster.x=riku.x-map.x;																	//make monster be right next to riku
+						}
+					} else if (riku==smObject && riku.x<monster.x+map.x && monster.Attacking==false){		//else if riku is the small object in collision && riku is more to the left than the monster && monster is not attacking...
+						skeleOff(monster);																		//makes current frame of monster transparent
+						mvSkeletonL(monster);																	//calls function to animate monster as it moves left towards riku		
+						if (riku.x<monster.x+map.x+spd){														//if riku is still more to the left even when monster moves towards riku...
+							monster.x-=spd;																			//make monster still move left
+						} else {																				//else...
+							monster.x=riku.x-map.x;																	//make monster be left next to riku
+						}
+					} 
+					if (riku==smObject && riku.y>monster.y+map.y && monster.Attacking==false){				//else if riku is the small object in collision && riku is more to the down than the monster && monster is not attacking...
+						skeleOff(monster);																		//makes current frame of monster transparent
+						mvSkeletonD(monster);																	//calls function to animate monster as it moves down towards riku
+						if (riku.y>monster.y+map.y+spd){														//if riku is still down even when monster moves towards riku...
+							monster.y+=spd;																			//make monster still move down
+						} else {																				//else...
+							monster.y=riku.y-map.y;																	//make monster be down next to riku
+						}
+					} else if (riku==smObject && riku.y<monster.y+map.y && monster.Attacking==false){		//else if riku is the small object in collision && riku is more to the up than the monster && monster is not attacking...
+						skeleOff(monster);																		//makes current frame of monster transparent
+						mvSkeletonU(monster);																	//calls function to animate monster as it moves up towards riku
+						if (riku.y<monster.y+map.y+spd){														//if riku is still more up even when monster moves towards riku...
+							monster.y-=spd;																			//make monster still move up
+						} else {																				//else...
+							skeleton1.y=riku.y-map.y;																//make monster be up next to riku
+						}
+					} 
+				}
+			}
+			public function enemiesAtk(evt:TimerEvent){			//function frequently called to make monster attack riku if in contact
+				enemyAtk(skeleton1);								//makes monster1 attack riku if in contact
+				enemyAtk(skeleton2);								//makes monster2 follow riku if in radius
+				enemyAtk(skeleton3);								//makes monster3 follow riku if in radius
+				enemyAtk(skeleton4);								//makes monster4 follow riku if in radius
+				enemyAtk(skeletonBoss);								//makes skeletonBoss follow riku in radius
+			}
+			public function enemyAtk(monster:Skeleton){											//makes monster attack riku
+				if (riku.hitTestPoint(monster.x+(monster.width*1.35)+visibScreen.x+map.x, 			//if riku is in contact with monster from the left...
+					monster.y+visibScreen.y+map.y)){													
+					battleTimer.stop();																	//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){														//if monster is attacking...
+						monsterTimer.stop();																//stop timer that makes monster follow riku
+						monster.Attacking=true;																//mark checker that monster is attacking
+						skeleOff(monster);																	//remove current visible frames of monster
+						monster.AtkRight[0].alpha=1;														//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkRight, 0.1, monster);										//animate monster attacking
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
+						rikuDie();																			//calls function to see if riku is dead
+					}
+				} else if (riku.hitTestPoint(monster.x+(monster.width/1.35)+visibScreen.x+map.x, 	//if riku is in contact with monster from the right...
+					monster.y+visibScreen.y+map.y)){													
+					battleTimer.stop();																	//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){														//if monster is attacking...
+						monsterTimer.stop();																//stop timer that makes monster follow riku
+						monster.Attacking=true;																//mark checker that monster is attacking
+						skeleOff(monster);																	//remove current visible frames of monster
+						monster.AtkLeft[0].alpha=1;															//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkLeft, 0.1, monster);										//animate monster attacking
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
+						rikuDie();																			//calls function to see if riku is dead
+					}
+				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 			//if riku is in contact with monster from the bottom...
+					monster.y-(monster.height/5)+visibScreen.y+map.y)){	
+					battleTimer.stop();																	//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){														//if monster is attacking...
+						monsterTimer.stop();																//stop timer that makes monster follow riku
+						monster.Attacking=true;																//mark checker that monster is attacking
+						skeleOff(monster);																	//remove current visible frames of monster
+						monster.AtkUp[0].alpha=1;															//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkUp, 0.1, monster);											//animate monster attacking
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
+						rikuDie();																			//calls function to see if riku is dead
+					}
+				} else if (riku.hitTestPoint(monster.x+monster.width+visibScreen.x+map.x, 			//if riku is in contact with monster from the top...
+					monster.y+monster.height/3+visibScreen.y+map.y)){									
+					battleTimer.stop();																	//stop timer that checks and makes monster attack
+					if (monster.Attacking==false){														//if monster is attacking...
+						monsterTimer.stop();																//stop timer that makes monster follow riku
+						monster.Attacking=true;																//mark checker that monster is attacking
+						skeleOff(monster);																	//remove current visible frames of monster
+						monster.AtkDown[0].alpha=1;															//make initial attacking frame of monster visible
+						animateAtk(0, monster.AtkDown, 0.05, monster);										//animate monster attacking
+						TweenMax.to(healthBar, 1, {scaleX:healthBar.scaleX-=(skeleDmg-(rikuDef/1000))});	//reduce health of riku with defense included
+						rikuDie();																			//calls function to see if riku is dead
+					}
+				}
+			}
+			public function animateAtk(currentFrame:uint, frame:Array, time:Number, monster:Skeleton){		//animates monster attacking riku
+				TweenMax.to(frame[currentFrame], time, {alpha:0});												//makes initial attacking frame transparent
+				currentFrame++;																					//moves to next frame
+				if (currentFrame<frame.length){																	//if current frame is less than attacking array length...
+					TweenMax.fromTo(frame[currentFrame], time, {alpha:0}, {alpha:1, 								//make frame visible and recall function
+						onComplete:animateAtk, onCompleteParams:[currentFrame, frame, time, monster]});
+				} else {																						//else...
+					TweenMax.to(frame[currentFrame-1], time, {alpha:0, onComplete:doneAttackingE, 					//make frame transparent and call function to reset attacking
+						onCompleteParams:[monster]});
+				}
+			}
+			
+			//RESETS GAME
+			public function reset(){					//resets all objects to default state
+				stopbgm();
+				playbgm(intro);
+				TweenMax.killAll(true, true, true);
+				TweenMax.pauseAll(true, true);
+				map.move(-430, -705);
+				mvOff();
+				rikuLvl.text="1";
+				expPoints.text="0";
+				maxExp.text="100";
+				rikuD0.alpha=1;
+				chgScreen('MainMenu');
+				skeleDmg=dmg;
+				spd=15;
+				rikuDef=5;
+				rikuDmg=10;
+				healthBar.scaleX=1;
+				staminaBar.scaleX=1;
+				manaBar.scaleX=1;
+				pausePage.horizontalCenter=-955;			//NOTE:if certain objects aren't resetted, that is intentional
+				pausePage.alpha=0;
+				invtPage.horizontalCenter=1300;
+				invtPage.alpha=0;
+				checkMM=false;
+				mainMenu();
+				skeleResetMap1();
+				skeleResetMap2();
+				riku.alpha=1;
+				helmetPiece.alpha=0;
+				chestPiece.alpha=0;
+				ringPiece.alpha=0;
+				bootsPiece.alpha=0;
+				sword.alpha=0;
+				slot1.alpha=0;
+				slot2.alpha=0;
+				slot3.alpha=0;
+				hpPotVal.alpha=0;
+				manaPotVal.alpha=0;
+				staminaPotVal.alpha=0;
+				hpPotVal.text="0";
+				manaPotVal.text="0";
+				staminaPotVal.text="0";
+				curr.text="0";
+				currInShop.text="0";
+				atkStats.text="10";
+				spdStats.text="15";
+				armorStats.text="5";
+				sword.source="assets/sword1.png";
+				
+			}
+			public function skeleResetMap1(){			//resets monsters in first map
+				skeleton1.alpha=1;
+				skeleton2.alpha=1;
+				skeleton3.alpha=1;
+				skeleton4.alpha=1;
+				skeleton1.health=100;
+				skeleton2.health=100;
+				skeleton3.health=100;
+				skeleton4.health=100;
+				skeleOff(skeleton1 && skeleton2 && skeleton3 && skeleton4);
+				skeleton1.move(320, 355);
+				skeleton1.Right[0].alpha=1;
+				skeleton2.move(1458, 1488);
+				skeleton2.Left[0].alpha=1;					//NOTE:if certain objects aren't reset, that is intentional
+				skeleton3.move(317, 1488);
+				skeleton3.Up[0].alpha=1;
+				skeleton4.move(1458, 355);
+				skeleton4.Down[0].alpha=1;
+				skeleCollision1 = new CollisionGroup(riku, collDetect1);
+				skeleCollision2 = new CollisionGroup(riku, collDetect2);
+				skeleCollision3 = new CollisionGroup(riku, collDetect3);
+				skeleCollision4 = new CollisionGroup(riku, collDetect4);
+			}
+			public function skeleResetMap2(){									//resets skeleton boss
+				skeletonBoss.alpha=1;												
+				skeletonBoss.health=1000;											
+				skeleCollisionB = new CollisionGroup(riku, collDetectB);			
+				skeleOff(skeletonBoss);												
+				skeletonBoss.Left[0].alpha=1;										//NOTE:if certain objects aren't reset, that is intentional
+				skeletonBoss.move(4779, 1177);										
+			}
+		]]>
+		
+	</fx:Script>
+	<!--MainMenuArea-->
+	<s:Image includeIn="MainMenu" width="955" height="600" horizontalCenter="0" smooth="true"
+			 smoothingQuality="high" source="assets/WorldMap.jpg" verticalCenter="0"/>
+	<s:BorderContainer id="container"
+					   includeIn="BlacksmithShop,Credits,GameOver,MainMenu,Merchant"
+					   width="385" height="339" backgroundAlpha="0.0" borderVisible="false"
+					   horizontalCenter="0" verticalCenter="0"
+					   width.BlacksmithShop="777" height.BlacksmithShop="515"
+					   backgroundAlpha.BlacksmithShop="1.0" backgroundColor.BlacksmithShop="#807979"
+					   horizontalCenter.BlacksmithShop="0" verticalCenter.BlacksmithShop="0"
+					   backgroundAlpha.Credits="0.01" color.Credits="#FFFFFF"
+					   width.GameOver="529" height.GameOver="441" horizontalCenter.GameOver="0"
+					   verticalCenter.GameOver="0"
+					   width.MainMenu="305" height.MainMenu="217" horizontalCenter.MainMenu="0"
+					   verticalCenter.MainMenu="0"
+					   width.Merchant="777" height.Merchant="515" backgroundAlpha.Merchant="1.0"
+					   backgroundColor.Merchant="#807979" horizontalCenter.Merchant="0"
+					   verticalCenter.Merchant="0">
+		<s:Image id="startBtn" includeIn="MainMenu" x="92" y="20" click="startGame();"
+				 smooth="true" smoothingQuality="high" source="assets/Star.png"/>
+		<s:Image id="creditBtn" includeIn="MainMenu" x="82" y="152" click="startCred();"
+				 smooth="true" smoothingQuality="high" source="assets/Cred.png"/>
+		<s:Image id="InstrucBtn" includeIn="MainMenu" x="41" y="86"
+				 click="startIns();" smooth="true" smoothingQuality="high"
+				 source="assets/Instru.png"/>
+		<s:Image includeIn="BlacksmithShop,Credits,GameOver,Merchant" bottom="0" horizontalCenter="0"
+				 source="assets/Ret.png"
+				 bottom.BlacksmithShop="0" click.BlacksmithShop="shopsReturn();"
+				 horizontalCenter.BlacksmithShop="0" smooth.BlacksmithShop="true"
+				 smoothingQuality.BlacksmithShop="high"
+				 click.Credits="chgScreen('MainMenu');" smooth.Credits="true"
+				 smoothingQuality.Credits="high"
+				 bottom.GameOver="15" click.GameOver="reset();" horizontalCenter.GameOver="0"
+				 smooth.GameOver="true" smoothingQuality.GameOver="high"
+				 bottom.Merchant="0" click.Merchant="shopsReturn();" horizontalCenter.Merchant="0"
+				 smoothingQuality.Merchant="high" smooth.Merchant="true"/>
+		<s:Image id="pfLogo" includeIn="MainMenu" x="-260" y="-152" width="343" height="153"
+				 smooth="true" smoothingQuality="high" source="assets/PhaseFacetLogo.png"/>
+		<s:Image includeIn="GameOver" top="0" horizontalCenter="0" smooth="false"
+				 smoothingQuality="high" source="assets/GameOver.png"/>
+		<s:Image includeIn="GameOver" horizontalCenter="0" source="assets/deadRiku.png"
+				 verticalCenter="0"/>
+		<s:Label includeIn="Merchant,BlacksmithShop" top="20" fontFamily="Georgia" fontSize="18"
+				 horizontalCenter="0" text="BLACKSMITH SHOP" textAlign="center"
+				 verticalAlign="middle"
+				 text.Merchant="MERCHANT"/>
+		<s:Image includeIn="Merchant,BlacksmithShop" left="20" top="20"
+				 source="assets/Blacksmith.png"
+				 source.Merchant="assets/chef.png"/>
+		<s:Label id="chefChatBox" includeIn="Merchant" top="50" width="617" height="39"
+				 backgroundColor="#FFFFFF" fontFamily="Arial" fontSize="20" fontWeight="bold"
+				 horizontalCenter="30" textAlign="center" verticalAlign="middle"/>
+		<s:Image includeIn="BlacksmithShop" x="35" y="160" click="buySword('assets/weapon2.png', 20, 200);" source="assets/weapon2.png"/>
+		<s:Label includeIn="Merchant,BlacksmithShop" top="108" width="80" fontFamily="Arial"
+				 fontWeight="bold" horizontalCenter="-211" text="Your money:" textAlign="left"
+				 verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="75" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="200" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="75" y="360" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="75" y="460" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="175" y="460" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="275" y="460" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="175" y="360" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="500" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="275" y="360" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="500" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="175" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="300" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="BlacksmithShop" x="275" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="400" textAlign="left" verticalAlign="middle"/>
+		<s:Image includeIn="BlacksmithShop" x="28" y="235" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="28" y="350" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="28" y="450" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="128" y="450" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="228" y="450" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="128" y="350" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="228" y="350" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="Merchant,BlacksmithShop" top="97" width="56" height="40" horizontalCenter="-149"
+				 source="assets/coins.png"/>
+		<s:Label id="currInShop" top="107" fontWeight="bold" horizontalCenter="-93" text="0"
+				 textAlign="center" verticalAlign="middle"
+				 alpha.Credits="0"
+				 alpha.GameOver="0"
+				 alpha.MainMenu="0"/>
+		<s:Image includeIn="BlacksmithShop" x="128" y="235" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="228" y="235" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Image includeIn="BlacksmithShop" x="135" y="160" click="buySword('assets/weapon3.png', 25, 300);" source="assets/weapon3.png"/>
+		<s:Image includeIn="BlacksmithShop" x="235" y="160" source="assets/chestA2.png"/>
+		<s:Image includeIn="BlacksmithShop" x="35" y="280" source="assets/boots2.png"/>
+		<s:Image includeIn="BlacksmithShop" x="135" y="280" click="buySword('assets/weapon4.png', 30, 500);" source="assets/weapon4.png"/>
+		<s:Image includeIn="BlacksmithShop" x="235" y="280" source="assets/chestA3.png"/>
+		<s:Image includeIn="BlacksmithShop" x="35" y="390" source="assets/ring2.png"/>
+		<s:Image includeIn="BlacksmithShop" x="135" y="390" source="assets/ring3.png"/>
+		<s:Image includeIn="BlacksmithShop" x="235" y="390" source="assets/boots3.png"/>
+		<s:Label id="blacksmithChatBox" includeIn="BlacksmithShop" top="50" width="617" height="39"
+				 backgroundColor="#FFFFFF" fontFamily="Arial" fontSize="20" fontWeight="bold"
+				 horizontalCenter="30" textAlign="center" verticalAlign="middle"/>
+		<s:Image id="hpPotMerc" includeIn="Merchant" x="35" y="160" click="buyPot(hpPotMerc, hpPotVal, 150, hpPotValMerc, slot1);"
+				 source="assets/hpPot.png"/>
+		<s:Image id="manaPotMerc" includeIn="Merchant" x="135" y="160" click="buyPot(manaPotMerc, manaPotVal, 150, manaPotValMerc, slot2);"
+				 source="assets/manaPot.png"/>
+		<s:Image id="staminaPotMerc" includeIn="Merchant" x="235" y="160" click="buyPot(staminaPotMerc, staminaPotVal, 500, staminaPotValMerc, slot3);"
+				 source="assets/staminaPot.png"/>
+		<s:Image includeIn="Merchant" x="28" y="235" width="39" height="34" source="assets/coins.png"/>
+		<s:Image includeIn="Merchant" x="128" y="235" width="39" height="34" source="assets/coins.png"/>
+		<s:Image includeIn="Merchant" x="228" y="235" width="39" height="34"
+				 source="assets/coins.png"/>
+		<s:Label includeIn="Merchant" x="75" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="Merchant" x="175" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="150" textAlign="left" verticalAlign="middle"/>
+		<s:Label includeIn="Merchant" x="275" y="243" width="23" height="17" fontFamily="Arial"
+				 fontWeight="bold" text="500" textAlign="left" verticalAlign="middle"/>
+		<s:Label id="hpPotValMerc" includeIn="Merchant" x="88" y="223" width="26" height="12"
+				 color="#FFFFFF" fontFamily="Arial" fontWeight="bold" text="99" textAlign="center"
+				 verticalAlign="middle"/>
+		<s:Label id="manaPotValMerc" includeIn="Merchant" x="188" y="223" width="26" height="12"
+				 color="#FFFFFF" fontFamily="Arial" fontWeight="bold" text="99" textAlign="center"
+				 verticalAlign="middle"/>
+		<s:Label id="staminaPotValMerc" includeIn="Merchant" x="288" y="223" width="26" height="12"
+				 color="#FFFFFF" fontFamily="Arial" fontWeight="bold" text="99" textAlign="center"
+				 verticalAlign="middle"/>
+		<s:TextArea includeIn="Credits" x="62" y="-80" width="255" height="366" borderVisible="false"
+					contentBackgroundAlpha="0.0" fontFamily="Arial" fontSize="19" fontWeight="bold"
+					text="CODES by&#xd;-Anna&#xd;-Kamir&#xd;&#xd;Animation by&#xd;-Anna&#xd;&#xd;Designing by&#xd;-Kamir&#xd;&#xd;SPECIAL THANKS TO:&#xd;Mr. Steven Banks"
+					textAlign="center" verticalAlign="middle"/>
+	</s:BorderContainer>
+	<!--IntroStoryArea-->
+	<s:BorderContainer includeIn="Introduction" width="976" height="547" backgroundAlpha="0.0"
+					   borderVisible="false" horizontalCenter="0" verticalCenter="0">
+		<s:Image id="wallP" width="977" height="544" alpha="0" horizontalCenter="0" smooth="true"
+				 smoothingQuality="high" source="assets/MenuWP.jpg" verticalCenter="0"/>
+		<s:Image id="skipBtn" right="40" bottom="40" alpha="0" click="effectSkip();" enabled="false"
+				 smooth="true" smoothingQuality="high" source="assets/Skip.png"/>
+		<s:BorderContainer x="118" y="123" width="750" height="260" backgroundAlpha="0.0"
+						   borderVisible="false">
+			<s:Label id="w1" x="0" y="0" width="50" height="20" alpha="1" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="When" textAlign="center"
+					 textDecoration="none" verticalAlign="middle"/>
+			<s:Label id="w2" x="50" y="0" width="35" height="20" alpha="1" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="two" textAlign="center" textDecoration="none"
+					 verticalAlign="middle"/>
+			<s:Label id="w3" x="85" y="0" width="110" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="dimensions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w4" x="197" y="0" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="collide" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w5" x="275" y="0" width="50" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="with" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w6" x="326" y="0" width="50" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="each" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w7" x="380" y="0" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="other" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w8" x="430" y="1" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="," textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w9" x="444" y="0" width="45" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="time" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w10" x="491" y="0" width="40" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="and" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w11" x="537" y="0" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="space" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w12" x="602" y="0" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="is" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w13" x="630" y="0" width="70" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="thrown" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w14" x="704" y="0" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="off" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w15" x="34" y="20" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="balance" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w16" x="103" y="20" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="." textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w17" x="124" y="20" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="The" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w18" x="166" y="20" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="two" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w19" x="209" y="20" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="dimensions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w20" x="322" y="20" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="start" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w21" x="384" y="20" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="to" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w22" x="420" y="20" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="merge" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w23" x="467" y="20" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="." textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w24" x="488" y="20" width="45" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="Some" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w25" x="541" y="20" width="115" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="inhabitants" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w26" x="661" y="20" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="are" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w27" x="0" y="40" width="90" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="insecure" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w28" x="92" y="40" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="about" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w29" x="154" y="40" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="the" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w30" x="192" y="40" width="65" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="change" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w31" x="264" y="40" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="because" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w32" x="347" y="40" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="of" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w33" x="378" y="40" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="their" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w34" x="439" y="40" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="variations" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w35" x="554" y="40" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="and" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w36" x="599" y="40" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="differences" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w37" x="706" y="40" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text=";" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w38" x="150" y="60" width="95" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="resulting" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w39" x="250" y="60" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="in" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w40" x="279" y="60" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="the" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w41" x="320" y="60" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="birth" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w42" x="380" y="60" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="of" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w43" x="410" y="60" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="rebellions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w44" x="510" y="60" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="." textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w45" x="30" y="160" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="The" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w46" x="69" y="160" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="rebellions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w47" x="179" y="160" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="bring" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w48" x="238" y="160" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="about" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w49" x="297" y="160" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="havoc" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w50" x="356" y="160" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="as" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w51" x="383" y="160" width="45" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="they" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w52" x="431" y="160" width="65" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="stride" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w53" x="490" y="160" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="." textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w54" x="507" y="160" width="45" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="This" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w55" x="558" y="160" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="is" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w56" x="588" y="160" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="where" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w57" x="646" y="160" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="the" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w58" x="0" y="180" width="115" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="protagonist" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w59" x="119" y="180" width="55" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="steps" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w60" x="179" y="180" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="in" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w61" x="208" y="180" width="25" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="to" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w62" x="238" y="180" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="restore" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w63" x="318" y="180" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="balance" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w64" x="398" y="180" width="75" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="between" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w65" x="482" y="180" width="45" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="both" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w66" x="533" y="180" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="dimensions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w67" x="646" y="180" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="by" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w68" x="675" y="180" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="facing" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w69" x="113" y="200" width="35" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="the" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w70" x="152" y="200" width="105" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="rebellions" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w71" x="254" y="200" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="," textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="w72" x="274" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="that" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w73" x="324" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="no" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w74" x="355" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="one" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w75" x="395" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="dares" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w76" x="453" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="to" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w77" x="483" y="200" height="20" fontFamily="Courier New" fontSize="17"
+					 fontWeight="bold" text="retaliate" textAlign="center" verticalAlign="middle"/>
+			<s:Label id="w78" x="569" y="200" width="15" height="20" fontFamily="Courier New"
+					 fontSize="17" fontWeight="bold" text="." textAlign="center"
+					 verticalAlign="middle"/>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	<!--PlayArea-->
+	<s:BorderContainer id="visibScreen" includeIn="Map1, Map2, Map3" width="955" height="600"
+					   backgroundColor="#000000" borderVisible="false" horizontalCenter="0"
+					   skinClass="com.ICS4U.CanvasSkin" verticalCenter="0">
+		<!--MapArea-->
+		<s:BorderContainer id="map" x="-430" y="-705" width="1800" height="1892"
+						   backgroundAlpha="0.0" borderVisible="false"
+						   x.Map2="-1100" y.Map2="-1570" width.Map2="5000" height.Map2="2500"
+						   backgroundColor.Map2="#FFFFFF"
+						   x.Map3="50" y.Map3="-800" width.Map3="5000" height.Map3="2500">
+			<s:Image id="noWalk" width="1800" height="1892" source="assets/DPnowalk.png"
+					 horizontalCenter.Map1="0" verticalCenter.Map1="0"
+					 width.Map2="5000" height.Map2="2500" horizontalCenter.Map2="0"
+					 source.Map2="assets/Map2noWalk.png" verticalCenter.Map2="0"
+					 width.Map3="5000" height.Map3="2500" horizontalCenter.Map3="0"
+					 source.Map3="assets/Map3noWalk.png" verticalCenter.Map3="0"/>
+			<s:Image width="1800" height="1892" horizontalCenter="0" source="assets/DPwalk.png"
+					 verticalCenter="0"
+					 width.Map2="5000" height.Map2="2500" source.Map2="assets/Map2Walk.png"
+					 width.Map3="5000" height.Map3="2500" source.Map3="assets/Map3Walk.png"/>
+			<s:Image id="exit" width="1800" height="1892" horizontalCenter="0"
+					 source="assets/Door.png" verticalCenter="0"
+					 width.Map2="5000" height.Map2="2500" source.Map2="assets/Map2Exit.png"
+					 width.Map3="5000" height.Map3="2500" source.Map3="assets/Map3Exit.png"/>
+			<ICS4U:Skeleton id="skeleton1" x="320" y="355" width="36" height="59" backgroundAlpha="0"
+							borderVisible="false"
+							x.Map2="0" y.Map2="0" alpha.Map2="0"
+							x.Map3="0" y.Map3="0" alpha.Map3="0">
+				<s:BorderContainer id="collDetect1" left="-90" top="-70" width="200" height="200"
+								   alpha="1" visible="false" borderVisible="false" cornerRadius="20">
+				</s:BorderContainer>
+				<s:Image id="skeleR0" x="0" y="0" source="assets/skeleR0.png"/>
+				<s:Image id="skeleR1" x="0" y="0" alpha="0" source="assets/skeleR1.png"/>
+				<s:Image id="skeleR2" x="0" y="0" alpha="0" source="assets/skeleR2.png"/>
+				<s:Image id="skeleR3" x="0" y="0" alpha="0" source="assets/skeleR3.png"/>
+				<s:Image id="skeleR4" x="0" y="0" alpha="0" source="assets/skeleR4.png"/>
+				<s:Image id="skeleR5" x="0" y="0" alpha="0" source="assets/skeleR5.png"/>
+				<s:Image id="skeleR6" x="0" y="0" alpha="0" source="assets/skeleR6.png"/>
+				<s:Image id="skeleR7" x="0" y="0" alpha="0" source="assets/skeleR7.png"/>
+				<s:Image id="skeleL0" x="0" y="0" alpha="0" source="assets/skeleL0.png"/>
+				<s:Image id="skeleL1" x="0" y="0" alpha="0" source="assets/skeleL1.png"/>
+				<s:Image id="skeleL2" x="0" y="0" alpha="0" source="assets/skeleL2.png"/>
+				<s:Image id="skeleL3" x="0" y="0" alpha="0" source="assets/skeleL3.png"/>
+				<s:Image id="skeleL4" x="0" y="0" alpha="0" source="assets/skeleL4.png"/>
+				<s:Image id="skeleL5" x="0" y="0" alpha="0" source="assets/skeleL5.png"/>
+				<s:Image id="skeleL6" x="0" y="0" alpha="0" source="assets/skeleL6.png"/>
+				<s:Image id="skeleL7" x="0" y="0" alpha="0" source="assets/skeleL7.png"/>
+				<s:Image id="skeleD0" x="0" y="0" alpha="0" source="assets/skeleD0.png"/>
+				<s:Image id="skeleD1" x="0" y="0" alpha="0" source="assets/skeleD1.png"/>
+				<s:Image id="skeleD2" x="0" y="0" alpha="0" source="assets/skeleD2.png"/>
+				<s:Image id="skeleD3" x="0" y="0" alpha="0" source="assets/skeleD3.png"/>
+				<s:Image id="skeleD4" x="0" y="0" alpha="0" source="assets/skeleD4.png"/>
+				<s:Image id="skeleD5" x="0" y="0" alpha="0" source="assets/skeleD5.png"/>
+				<s:Image id="skeleD6" x="0" y="0" alpha="0" source="assets/skeleD6.png"/>
+				<s:Image id="skeleD7" x="0" y="0" alpha="0" source="assets/skeleD7.png"/>
+				<s:Image id="skeleU0" x="0" y="0" alpha="0" source="assets/skeleU0.png"/>
+				<s:Image id="skeleU1" x="0" y="0" alpha="0" source="assets/skeleU1.png"/>
+				<s:Image id="skeleU2" x="0" y="0" alpha="0" source="assets/skeleU2.png"/>
+				<s:Image id="skeleU3" x="0" y="0" alpha="0" source="assets/skeleU3.png"/>
+				<s:Image id="skeleU4" x="0" y="0" alpha="0" source="assets/skeleU4.png"/>
+				<s:Image id="skeleU5" x="0" y="0" alpha="0" source="assets/skeleU5.png"/>
+				<s:Image id="skeleU6" x="0" y="0" alpha="0" source="assets/skeleU6.png"/>
+				<s:Image id="skeleU7" x="0" y="0" alpha="0" source="assets/skeleU7.png"/>
+				<s:Image id="skeleSU0" x="0" y="0" alpha="0" source="assets/skeleSU0.png"/>
+				<s:Image id="skeleSU1" x="0" y="0" alpha="0" source="assets/skeleSU1.png"/>
+				<s:Image id="skeleSU2" x="0" y="0" alpha="0" source="assets/skeleSU2.png"/>
+				<s:Image id="skeleSU3" x="0" y="0" alpha="0" source="assets/skeleSU3.png"/>
+				<s:Image id="skeleSU4" x="0" y="0" alpha="0" source="assets/skeleSU4.png"/>
+				<s:Image id="skeleSU5" x="0" y="0" alpha="0" source="assets/skeleSU5.png"/>
+				<s:Image id="skeleSU6" x="0" y="0" alpha="0" source="assets/skeleSU6.png"/>
+				<s:Image id="skeleSU7" x="0" y="0" alpha="0" source="assets/skeleSU7.png"/>
+				<s:Image id="skeleSD0" x="0" y="0" alpha="0" source="assets/skeleSD0.png"/>
+				<s:Image id="skeleSD1" x="0" y="0" alpha="0" source="assets/skeleSD1.png"/>
+				<s:Image id="skeleSD2" x="0" y="0" alpha="0" source="assets/skeleSD2.png"/>
+				<s:Image id="skeleSD3" x="0" y="0" alpha="0" source="assets/skeleSD3.png"/>
+				<s:Image id="skeleSD4" x="0" y="0" alpha="0" source="assets/skeleSD4.png"/>
+				<s:Image id="skeleSD5" x="0" y="0" alpha="0" source="assets/skeleSD5.png"/>
+				<s:Image id="skeleSD6" x="0" y="0" alpha="0" source="assets/skeleSD6.png"/>
+				<s:Image id="skeleSD7" x="0" y="0" alpha="0" source="assets/skeleSD7.png"/>
+				<s:Image id="skeleSL0" x="0" y="0" alpha="0" source="assets/skeleSL0.png"/>
+				<s:Image id="skeleSL1" x="0" y="0" alpha="0" source="assets/skeleSL1.png"/>
+				<s:Image id="skeleSL2" x="0" y="0" alpha="0" source="assets/skeleSL2.png"/>
+				<s:Image id="skeleSL3" x="0" y="0" alpha="0" source="assets/skeleSL3.png"/>
+				<s:Image id="skeleSL4" x="0" y="0" alpha="0" source="assets/skeleSL4.png"/>
+				<s:Image id="skeleSL5" x="0" y="0" alpha="0" source="assets/skeleSL5.png"/>
+				<s:Image id="skeleSL6" x="0" y="0" alpha="0" source="assets/skeleSL6.png"/>
+				<s:Image id="skeleSL7" x="0" y="0" alpha="0" source="assets/skeleSL7.png"/>
+				<s:Image id="skeleSR0" x="0" y="0" alpha="0" source="assets/skeleSR0.png"/>
+				<s:Image id="skeleSR1" x="0" y="0" alpha="0" source="assets/skeleSR1.png"/>
+				<s:Image id="skeleSR2" x="0" y="0" alpha="0" source="assets/skeleSR2.png"/>
+				<s:Image id="skeleSR3" x="0" y="0" alpha="0" source="assets/skeleSR3.png"/>
+				<s:Image id="skeleSR4" x="0" y="0" alpha="0" source="assets/skeleSR4.png"/>
+				<s:Image id="skeleSR5" x="0" y="0" alpha="0" source="assets/skeleSR5.png"/>
+				<s:Image id="skeleSR6" x="0" y="0" alpha="0" source="assets/skeleSR6.png"/>
+				<s:Image id="skeleSR7" x="0" y="0" alpha="0" source="assets/skeleSR7.png"/>
+			</ICS4U:Skeleton>
+			<ICS4U:Skeleton id="skeleton2" x="1458" y="1488" width="36" height="59"
+							backgroundAlpha="0.0" borderVisible="false"
+							x.Map2="0" y.Map2="0" alpha.Map2="0"
+							x.Map3="0" y.Map3="0" alpha.Map3="0">
+				<s:BorderContainer id="collDetect2" left="-90" top="-70" width="200" height="200"
+								   alpha="1" visible="false" borderVisible="false" cornerRadius="20">
+				</s:BorderContainer>
+				<s:Image id="skele2R0" x="0" y="0" alpha="0" source="assets/skeleR0.png"/>
+				<s:Image id="skele2R1" x="0" y="0" alpha="0" source="assets/skeleR1.png"/>
+				<s:Image id="skele2R2" x="0" y="0" alpha="0" source="assets/skeleR2.png"/>
+				<s:Image id="skele2R3" x="0" y="0" alpha="0" source="assets/skeleR3.png"/>
+				<s:Image id="skele2R4" x="0" y="0" alpha="0" source="assets/skeleR4.png"/>
+				<s:Image id="skele2R5" x="0" y="0" alpha="0" source="assets/skeleR5.png"/>
+				<s:Image id="skele2R6" x="0" y="0" alpha="0" source="assets/skeleR6.png"/>
+				<s:Image id="skele2R7" x="0" y="0" alpha="0" source="assets/skeleR7.png"/>
+				<s:Image id="skele2L0" x="0" y="0" source="assets/skeleL0.png"/>
+				<s:Image id="skele2L1" x="0" y="0" alpha="0" source="assets/skeleL1.png"/>
+				<s:Image id="skele2L2" x="0" y="0" alpha="0" source="assets/skeleL2.png"/>
+				<s:Image id="skele2L3" x="0" y="0" alpha="0" source="assets/skeleL3.png"/>
+				<s:Image id="skele2L4" x="0" y="0" alpha="0" source="assets/skeleL4.png"/>
+				<s:Image id="skele2L5" x="0" y="0" alpha="0" source="assets/skeleL5.png"/>
+				<s:Image id="skele2L6" x="0" y="0" alpha="0" source="assets/skeleL6.png"/>
+				<s:Image id="skele2L7" x="0" y="0" alpha="0" source="assets/skeleL7.png"/>
+				<s:Image id="skele2D0" x="0" y="0" alpha="0" source="assets/skeleD0.png"/>
+				<s:Image id="skele2D1" x="0" y="0" alpha="0" source="assets/skeleD1.png"/>
+				<s:Image id="skele2D2" x="0" y="0" alpha="0" source="assets/skeleD2.png"/>
+				<s:Image id="skele2D3" x="0" y="0" alpha="0" source="assets/skeleD3.png"/>
+				<s:Image id="skele2D4" x="0" y="0" alpha="0" source="assets/skeleD4.png"/>
+				<s:Image id="skele2D5" x="0" y="0" alpha="0" source="assets/skeleD5.png"/>
+				<s:Image id="skele2D6" x="0" y="0" alpha="0" source="assets/skeleD6.png"/>
+				<s:Image id="skele2D7" x="0" y="0" alpha="0" source="assets/skeleD7.png"/>
+				<s:Image id="skele2U0" x="0" y="0" alpha="0" source="assets/skeleU0.png"/>
+				<s:Image id="skele2U1" x="0" y="0" alpha="0" source="assets/skeleU1.png"/>
+				<s:Image id="skele2U2" x="0" y="0" alpha="0" source="assets/skeleU2.png"/>
+				<s:Image id="skele2U3" x="0" y="0" alpha="0" source="assets/skeleU3.png"/>
+				<s:Image id="skele2U4" x="0" y="0" alpha="0" source="assets/skeleU4.png"/>
+				<s:Image id="skele2U5" x="0" y="0" alpha="0" source="assets/skeleU5.png"/>
+				<s:Image id="skele2U6" x="0" y="0" alpha="0" source="assets/skeleU6.png"/>
+				<s:Image id="skele2U7" x="0" y="0" alpha="0" source="assets/skeleU7.png"/>
+				<s:Image id="skele2SU0" x="0" y="0" alpha="0" source="assets/skeleSU0.png"/>
+				<s:Image id="skele2SU1" x="0" y="0" alpha="0" source="assets/skeleSU1.png"/>
+				<s:Image id="skele2SU2" x="0" y="0" alpha="0" source="assets/skeleSU2.png"/>
+				<s:Image id="skele2SU3" x="0" y="0" alpha="0" source="assets/skeleSU3.png"/>
+				<s:Image id="skele2SU4" x="0" y="0" alpha="0" source="assets/skeleSU4.png"/>
+				<s:Image id="skele2SU5" x="0" y="0" alpha="0" source="assets/skeleSU5.png"/>
+				<s:Image id="skele2SU6" x="0" y="0" alpha="0" source="assets/skeleSU6.png"/>
+				<s:Image id="skele2SU7" x="0" y="0" alpha="0" source="assets/skeleSU7.png"/>
+				<s:Image id="skele2SD0" x="0" y="0" alpha="0" source="assets/skeleSD0.png"/>
+				<s:Image id="skele2SD1" x="0" y="0" alpha="0" source="assets/skeleSD1.png"/>
+				<s:Image id="skele2SD2" x="0" y="0" alpha="0" source="assets/skeleSD2.png"/>
+				<s:Image id="skele2SD3" x="0" y="0" alpha="0" source="assets/skeleSD3.png"/>
+				<s:Image id="skele2SD4" x="0" y="0" alpha="0" source="assets/skeleSD4.png"/>
+				<s:Image id="skele2SD5" x="0" y="0" alpha="0" source="assets/skeleSD5.png"/>
+				<s:Image id="skele2SD6" x="0" y="0" alpha="0" source="assets/skeleSD6.png"/>
+				<s:Image id="skele2SD7" x="0" y="0" alpha="0" source="assets/skeleSD7.png"/>
+				<s:Image id="skele2SL0" x="0" y="0" alpha="0" source="assets/skeleSL0.png"/>
+				<s:Image id="skele2SL1" x="0" y="0" alpha="0" source="assets/skeleSL1.png"/>
+				<s:Image id="skele2SL2" x="0" y="0" alpha="0" source="assets/skeleSL2.png"/>
+				<s:Image id="skele2SL3" x="0" y="0" alpha="0" source="assets/skeleSL3.png"/>
+				<s:Image id="skele2SL4" x="0" y="0" alpha="0" source="assets/skeleSL4.png"/>
+				<s:Image id="skele2SL5" x="0" y="0" alpha="0" source="assets/skeleSL5.png"/>
+				<s:Image id="skele2SL6" x="0" y="0" alpha="0" source="assets/skeleSL6.png"/>
+				<s:Image id="skele2SL7" x="0" y="0" alpha="0" source="assets/skeleSL7.png"/>
+				<s:Image id="skele2SR0" x="0" y="0" alpha="0" source="assets/skeleSR0.png"/>
+				<s:Image id="skele2SR1" x="0" y="0" alpha="0" source="assets/skeleSR1.png"/>
+				<s:Image id="skele2SR2" x="0" y="0" alpha="0" source="assets/skeleSR2.png"/>
+				<s:Image id="skele2SR3" x="0" y="0" alpha="0" source="assets/skeleSR3.png"/>
+				<s:Image id="skele2SR4" x="0" y="0" alpha="0" source="assets/skeleSR4.png"/>
+				<s:Image id="skele2SR5" x="0" y="0" alpha="0" source="assets/skeleSR5.png"/>
+				<s:Image id="skele2SR6" x="0" y="0" alpha="0" source="assets/skeleSR6.png"/>
+				<s:Image id="skele2SR7" x="0" y="0" alpha="0" source="assets/skeleSR7.png"/>
+			</ICS4U:Skeleton>
+			<ICS4U:Skeleton id="skeleton3" x="317" y="1488" width="36"
+							height="59" backgroundAlpha="0.0" borderVisible="false"
+							x.Map2="0" y.Map2="0" alpha.Map2="0"
+							x.Map3="0" y.Map3="0" alpha.Map3="0">
+				<s:BorderContainer id="collDetect3" left="-90" top="-70" width="200" height="200"
+								   alpha="1" visible="false" borderVisible="false" cornerRadius="20">
+				</s:BorderContainer>
+				<s:Image id="skele3R0" x="0" y="0" alpha="0" source="assets/skeleR0.png"/>
+				<s:Image id="skele3R1" x="0" y="0" alpha="0" source="assets/skeleR1.png"/>
+				<s:Image id="skele3R2" x="0" y="0" alpha="0" source="assets/skeleR2.png"/>
+				<s:Image id="skele3R3" x="0" y="0" alpha="0" source="assets/skeleR3.png"/>
+				<s:Image id="skele3R4" x="0" y="0" alpha="0" source="assets/skeleR4.png"/>
+				<s:Image id="skele3R5" x="0" y="0" alpha="0" source="assets/skeleR5.png"/>
+				<s:Image id="skele3R6" x="0" y="0" alpha="0" source="assets/skeleR6.png"/>
+				<s:Image id="skele3R7" x="0" y="0" alpha="0" source="assets/skeleR7.png"/>
+				<s:Image id="skele3L0" x="0" y="0" alpha="0" source="assets/skeleL0.png"/>
+				<s:Image id="skele3L1" x="0" y="0" alpha="0" source="assets/skeleL1.png"/>
+				<s:Image id="skele3L2" x="0" y="0" alpha="0" source="assets/skeleL2.png"/>
+				<s:Image id="skele3L3" x="0" y="0" alpha="0" source="assets/skeleL3.png"/>
+				<s:Image id="skele3L4" x="0" y="0" alpha="0" source="assets/skeleL4.png"/>
+				<s:Image id="skele3L5" x="0" y="0" alpha="0" source="assets/skeleL5.png"/>
+				<s:Image id="skele3L6" x="0" y="0" alpha="0" source="assets/skeleL6.png"/>
+				<s:Image id="skele3L7" x="0" y="0" alpha="0" source="assets/skeleL7.png"/>
+				<s:Image id="skele3D0" x="0" y="0" alpha="0" source="assets/skeleD0.png"/>
+				<s:Image id="skele3D1" x="0" y="0" alpha="0" source="assets/skeleD1.png"/>
+				<s:Image id="skele3D2" x="0" y="0" alpha="0" source="assets/skeleD2.png"/>
+				<s:Image id="skele3D3" x="0" y="0" alpha="0" source="assets/skeleD3.png"/>
+				<s:Image id="skele3D4" x="0" y="0" alpha="0" source="assets/skeleD4.png"/>
+				<s:Image id="skele3D5" x="0" y="0" alpha="0" source="assets/skeleD5.png"/>
+				<s:Image id="skele3D6" x="0" y="0" alpha="0" source="assets/skeleD6.png"/>
+				<s:Image id="skele3D7" x="0" y="0" alpha="0" source="assets/skeleD7.png"/>
+				<s:Image id="skele3U0" x="0" y="0" source="assets/skeleU0.png"/>
+				<s:Image id="skele3U1" x="0" y="0" alpha="0" source="assets/skeleU1.png"/>
+				<s:Image id="skele3U2" x="0" y="0" alpha="0" source="assets/skeleU2.png"/>
+				<s:Image id="skele3U3" x="0" y="0" alpha="0" source="assets/skeleU3.png"/>
+				<s:Image id="skele3U4" x="0" y="0" alpha="0" source="assets/skeleU4.png"/>
+				<s:Image id="skele3U5" x="0" y="0" alpha="0" source="assets/skeleU5.png"/>
+				<s:Image id="skele3U6" x="0" y="0" alpha="0" source="assets/skeleU6.png"/>
+				<s:Image id="skele3U7" x="0" y="0" alpha="0" source="assets/skeleU7.png"/>
+				<s:Image id="skele3SU0" x="0" y="0" alpha="0" source="assets/skeleSU0.png"/>
+				<s:Image id="skele3SU1" x="0" y="0" alpha="0" source="assets/skeleSU1.png"/>
+				<s:Image id="skele3SU2" x="0" y="0" alpha="0" source="assets/skeleSU2.png"/>
+				<s:Image id="skele3SU3" x="0" y="0" alpha="0" source="assets/skeleSU3.png"/>
+				<s:Image id="skele3SU4" x="0" y="0" alpha="0" source="assets/skeleSU4.png"/>
+				<s:Image id="skele3SU5" x="0" y="0" alpha="0" source="assets/skeleSU5.png"/>
+				<s:Image id="skele3SU6" x="0" y="0" alpha="0" source="assets/skeleSU6.png"/>
+				<s:Image id="skele3SU7" x="0" y="0" alpha="0" source="assets/skeleSU7.png"/>
+				<s:Image id="skele3SD0" x="0" y="0" alpha="0" source="assets/skeleSD0.png"/>
+				<s:Image id="skele3SD1" x="0" y="0" alpha="0" source="assets/skeleSD1.png"/>
+				<s:Image id="skele3SD2" x="0" y="0" alpha="0" source="assets/skeleSD2.png"/>
+				<s:Image id="skele3SD3" x="0" y="0" alpha="0" source="assets/skeleSD3.png"/>
+				<s:Image id="skele3SD4" x="0" y="0" alpha="0" source="assets/skeleSD4.png"/>
+				<s:Image id="skele3SD5" x="0" y="0" alpha="0" source="assets/skeleSD5.png"/>
+				<s:Image id="skele3SD6" x="0" y="0" alpha="0" source="assets/skeleSD6.png"/>
+				<s:Image id="skele3SD7" x="0" y="0" alpha="0" source="assets/skeleSD7.png"/>
+				<s:Image id="skele3SL0" x="0" y="0" alpha="0" source="assets/skeleSL0.png"/>
+				<s:Image id="skele3SL1" x="0" y="0" alpha="0" source="assets/skeleSL1.png"/>
+				<s:Image id="skele3SL2" x="0" y="0" alpha="0" source="assets/skeleSL2.png"/>
+				<s:Image id="skele3SL3" x="0" y="0" alpha="0" source="assets/skeleSL3.png"/>
+				<s:Image id="skele3SL4" x="0" y="0" alpha="0" source="assets/skeleSL4.png"/>
+				<s:Image id="skele3SL5" x="0" y="0" alpha="0" source="assets/skeleSL5.png"/>
+				<s:Image id="skele3SL6" x="0" y="0" alpha="0" source="assets/skeleSL6.png"/>
+				<s:Image id="skele3SL7" x="0" y="0" alpha="0" source="assets/skeleSL7.png"/>
+				<s:Image id="skele3SR0" x="0" y="0" alpha="0" source="assets/skeleSR0.png"/>
+				<s:Image id="skele3SR1" x="0" y="0" alpha="0" source="assets/skeleSR1.png"/>
+				<s:Image id="skele3SR2" x="0" y="0" alpha="0" source="assets/skeleSR2.png"/>
+				<s:Image id="skele3SR3" x="0" y="0" alpha="0" source="assets/skeleSR3.png"/>
+				<s:Image id="skele3SR4" x="0" y="0" alpha="0" source="assets/skeleSR4.png"/>
+				<s:Image id="skele3SR5" x="0" y="0" alpha="0" source="assets/skeleSR5.png"/>
+				<s:Image id="skele3SR6" x="0" y="0" alpha="0" source="assets/skeleSR6.png"/>
+				<s:Image id="skele3SR7" x="0" y="0" alpha="0" source="assets/skeleSR7.png"/>
+			</ICS4U:Skeleton>
+			<ICS4U:Skeleton id="skeleton4" x="1458" y="355" width="36"
+							height="59" backgroundAlpha="0.0" borderVisible="false"
+							x.Map2="0" y.Map2="0" alpha.Map2="0"
+							x.Map3="0" y.Map3="0" alpha.Map3="0">
+				<s:BorderContainer id="collDetect4" left="-90" top="-70" width="200" height="200"
+								   alpha="1" visible="false" borderVisible="false" cornerRadius="20">
+				</s:BorderContainer>
+				<s:Image id="skele4R0" x="0" y="0" alpha="0" source="assets/skeleR0.png"/>
+				<s:Image id="skele4R1" x="0" y="0" alpha="0" source="assets/skeleR1.png"/>
+				<s:Image id="skele4R2" x="0" y="0" alpha="0" source="assets/skeleR2.png"/>
+				<s:Image id="skele4R3" x="0" y="0" alpha="0" source="assets/skeleR3.png"/>
+				<s:Image id="skele4R4" x="0" y="0" alpha="0" source="assets/skeleR4.png"/>
+				<s:Image id="skele4R5" x="0" y="0" alpha="0" source="assets/skeleR5.png"/>
+				<s:Image id="skele4R6" x="0" y="0" alpha="0" source="assets/skeleR6.png"/>
+				<s:Image id="skele4R7" x="0" y="0" alpha="0" source="assets/skeleR7.png"/>
+				<s:Image id="skele4L0" x="0" y="0" alpha="0" source="assets/skeleL0.png"/>
+				<s:Image id="skele4L1" x="0" y="0" alpha="0" source="assets/skeleL1.png"/>
+				<s:Image id="skele4L2" x="0" y="0" alpha="0" source="assets/skeleL2.png"/>
+				<s:Image id="skele4L3" x="0" y="0" alpha="0" source="assets/skeleL3.png"/>
+				<s:Image id="skele4L4" x="0" y="0" alpha="0" source="assets/skeleL4.png"/>
+				<s:Image id="skele4L5" x="0" y="0" alpha="0" source="assets/skeleL5.png"/>
+				<s:Image id="skele4L6" x="0" y="0" alpha="0" source="assets/skeleL6.png"/>
+				<s:Image id="skele4L7" x="0" y="0" alpha="0" source="assets/skeleL7.png"/>
+				<s:Image id="skele4D0" x="0" y="0" source="assets/skeleD0.png"/>
+				<s:Image id="skele4D1" x="0" y="0" alpha="0" source="assets/skeleD1.png"/>
+				<s:Image id="skele4D2" x="0" y="0" alpha="0" source="assets/skeleD2.png"/>
+				<s:Image id="skele4D3" x="0" y="0" alpha="0" source="assets/skeleD3.png"/>
+				<s:Image id="skele4D4" x="0" y="0" alpha="0" source="assets/skeleD4.png"/>
+				<s:Image id="skele4D5" x="0" y="0" alpha="0" source="assets/skeleD5.png"/>
+				<s:Image id="skele4D6" x="0" y="0" alpha="0" source="assets/skeleD6.png"/>
+				<s:Image id="skele4D7" x="0" y="0" alpha="0" source="assets/skeleD7.png"/>
+				<s:Image id="skele4U0" x="0" y="0" alpha="0" source="assets/skeleU0.png"/>
+				<s:Image id="skele4U1" x="0" y="0" alpha="0" source="assets/skeleU1.png"/>
+				<s:Image id="skele4U2" x="0" y="0" alpha="0" source="assets/skeleU2.png"/>
+				<s:Image id="skele4U3" x="0" y="0" alpha="0" source="assets/skeleU3.png"/>
+				<s:Image id="skele4U4" x="0" y="0" alpha="0" source="assets/skeleU4.png"/>
+				<s:Image id="skele4U5" x="0" y="0" alpha="0" source="assets/skeleU5.png"/>
+				<s:Image id="skele4U6" x="0" y="0" alpha="0" source="assets/skeleU6.png"/>
+				<s:Image id="skele4U7" x="0" y="0" alpha="0" source="assets/skeleU7.png"/>
+				<s:Image id="skele4SU0" x="0" y="0" alpha="0" source="assets/skeleSU0.png"/>
+				<s:Image id="skele4SU1" x="0" y="0" alpha="0" source="assets/skeleSU1.png"/>
+				<s:Image id="skele4SU2" x="0" y="0" alpha="0" source="assets/skeleSU2.png"/>
+				<s:Image id="skele4SU3" x="0" y="0" alpha="0" source="assets/skeleSU3.png"/>
+				<s:Image id="skele4SU4" x="0" y="0" alpha="0" source="assets/skeleSU4.png"/>
+				<s:Image id="skele4SU5" x="0" y="0" alpha="0" source="assets/skeleSU5.png"/>
+				<s:Image id="skele4SU6" x="0" y="0" alpha="0" source="assets/skeleSU6.png"/>
+				<s:Image id="skele4SU7" x="0" y="0" alpha="0" source="assets/skeleSU7.png"/>
+				<s:Image id="skele4SD0" x="0" y="0" alpha="0" source="assets/skeleSD0.png"/>
+				<s:Image id="skele4SD1" x="0" y="0" alpha="0" source="assets/skeleSD1.png"/>
+				<s:Image id="skele4SD2" x="0" y="0" alpha="0" source="assets/skeleSD2.png"/>
+				<s:Image id="skele4SD3" x="0" y="0" alpha="0" source="assets/skeleSD3.png"/>
+				<s:Image id="skele4SD4" x="0" y="0" alpha="0" source="assets/skeleSD4.png"/>
+				<s:Image id="skele4SD5" x="0" y="0" alpha="0" source="assets/skeleSD5.png"/>
+				<s:Image id="skele4SD6" x="0" y="0" alpha="0" source="assets/skeleSD6.png"/>
+				<s:Image id="skele4SD7" x="0" y="0" alpha="0" source="assets/skeleSD7.png"/>
+				<s:Image id="skele4SL0" x="0" y="0" alpha="0" source="assets/skeleSL0.png"/>
+				<s:Image id="skele4SL1" x="0" y="0" alpha="0" source="assets/skeleSL1.png"/>
+				<s:Image id="skele4SL2" x="0" y="0" alpha="0" source="assets/skeleSL2.png"/>
+				<s:Image id="skele4SL3" x="0" y="0" alpha="0" source="assets/skeleSL3.png"/>
+				<s:Image id="skele4SL4" x="0" y="0" alpha="0" source="assets/skeleSL4.png"/>
+				<s:Image id="skele4SL5" x="0" y="0" alpha="0" source="assets/skeleSL5.png"/>
+				<s:Image id="skele4SL6" x="0" y="0" alpha="0" source="assets/skeleSL6.png"/>
+				<s:Image id="skele4SL7" x="0" y="0" alpha="0" source="assets/skeleSL7.png"/>
+				<s:Image id="skele4SR0" x="0" y="0" alpha="0" source="assets/skeleSR0.png"/>
+				<s:Image id="skele4SR1" x="0" y="0" alpha="0" source="assets/skeleSR1.png"/>
+				<s:Image id="skele4SR2" x="0" y="0" alpha="0" source="assets/skeleSR2.png"/>
+				<s:Image id="skele4SR3" x="0" y="0" alpha="0" source="assets/skeleSR3.png"/>
+				<s:Image id="skele4SR4" x="0" y="0" alpha="0" source="assets/skeleSR4.png"/>
+				<s:Image id="skele4SR5" x="0" y="0" alpha="0" source="assets/skeleSR5.png"/>
+				<s:Image id="skele4SR6" x="0" y="0" alpha="0" source="assets/skeleSR6.png"/>
+				<s:Image id="skele4SR7" x="0" y="0" alpha="0" source="assets/skeleSR7.png"/>
+			</ICS4U:Skeleton>
+			<ICS4U:Chest id="chestL" x="559" y="979" width="31" height="49" backgroundAlpha="0.0"
+						 borderVisible="false" health="3" mana="0"
+						 alpha.Map2="0"
+						 alpha.Map3="0">
+				<s:Image id="chestL0" x="0" y="0" width="33" height="50"
+						 source="assets/chestL0.png"/>
+				<s:Image id="chestL2" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestL2.png"/>
+				<s:Image id="chestL1" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestL1.png"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestR" x="1207" y="981" width="31" height="49" backgroundAlpha="0.0"
+						 borderVisible="false" health="0" mana="3"
+						 alpha.Map2="0"
+						 alpha.Map3="0">
+				<s:Image id="chestR0" x="0" y="0" width="33" height="50"
+						 source="assets/chestR0.png"/>
+				<s:Image id="chestR2" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestR2.png"/>
+				<s:Image id="chestR1" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestR1.png"/>
+			</ICS4U:Chest>
+			<ICS4U:Skeleton id="skeletonBoss" x="4779" y="1177" width="59" height="98" backgroundAlpha="0.01"
+							borderVisible="false" x.Map1="0" y.Map1="0" alpha.Map1="0"
+							x.Map3="0" y.Map3="0" alpha.Map3="0">
+				<s:BorderContainer id="collDetectB" left="-276" top="-237" width="600" height="600"
+								   alpha="1" visible="false" borderVisible="false" cornerRadius="20">
+				</s:BorderContainer>
+				<s:Image id="skeleBR0" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR0.png"/>
+				<s:Image id="skeleBR1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR1.png"/>
+				<s:Image id="skeleBR2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR2.png"/>
+				<s:Image id="skeleBR3" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR3.png"/>
+				<s:Image id="skeleBR4" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR4.png"/>
+				<s:Image id="skeleBR5" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR5.png"/>
+				<s:Image id="skeleBR6" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR6.png"/>
+				<s:Image id="skeleBR7" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleR7.png"/>
+				<s:Image id="skeleBL0" x="0" y="0" width="61" height="99" source="assets/skeleL0.png"/>
+				<s:Image id="skeleBL1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL1.png"/>
+				<s:Image id="skeleBL2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL2.png"/>
+				<s:Image id="skeleBL3" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL3.png"/>
+				<s:Image id="skeleBL4" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL4.png"/>
+				<s:Image id="skeleBL5" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL5.png"/>
+				<s:Image id="skeleBL6" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL6.png"/>
+				<s:Image id="skeleBL7" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleL7.png"/>
+				<s:Image id="skeleBD0" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD0.png"/>
+				<s:Image id="skeleBD1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD1.png"/>
+				<s:Image id="skeleBD2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD2.png"/>
+				<s:Image id="skeleBD3" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD3.png"/>
+				<s:Image id="skeleBD4" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD4.png"/>
+				<s:Image id="skeleBD5" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD5.png"/>
+				<s:Image id="skeleBD6" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD6.png"/>
+				<s:Image id="skeleBD7" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleD7.png"/>
+				<s:Image id="skeleBU0" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU0.png"/>
+				<s:Image id="skeleBU1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU1.png"/>
+				<s:Image id="skeleBU2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU2.png"/>
+				<s:Image id="skeleBU3" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU3.png"/>
+				<s:Image id="skeleBU4" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU4.png"/>
+				<s:Image id="skeleBU5" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU5.png"/>
+				<s:Image id="skeleBU6" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU6.png"/>
+				<s:Image id="skeleBU7" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleU7.png"/>
+				<s:Image id="skeleBSU0" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU0.png"/>
+				<s:Image id="skeleBSU1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU1.png"/>
+				<s:Image id="skeleBSU2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU2.png"/>
+				<s:Image id="skeleBSU3" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU3.png"/>
+				<s:Image id="skeleBSU4" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU4.png"/>
+				<s:Image id="skeleBSU5" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU5.png"/>
+				<s:Image id="skeleBSU6" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU6.png"/>
+				<s:Image id="skeleBSU7" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSU7.png"/>
+				<s:Image id="skeleBSD0" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSD0.png"/>
+				<s:Image id="skeleBSD1" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSD1.png"/>
+				<s:Image id="skeleBSD2" x="0" y="0" width="61" height="99" alpha="0" source="assets/skeleSD2.png"/>
+				<s:Image id="skeleBSD3" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSD3.png"/>
+				<s:Image id="skeleBSD4" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSD4.png"/>
+				<s:Image id="skeleBSD5" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSD5.png"/>
+				<s:Image id="skeleBSD6" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSD6.png"/>
+				<s:Image id="skeleBSD7" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSD7.png"/>
+				<s:Image id="skeleBSL0" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL0.png"/>
+				<s:Image id="skeleBSL1" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL1.png"/>
+				<s:Image id="skeleBSL2" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL2.png"/>
+				<s:Image id="skeleBSL3" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL3.png"/>
+				<s:Image id="skeleBSL4" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL4.png"/>
+				<s:Image id="skeleBSL5" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL5.png"/>
+				<s:Image id="skeleBSL6" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL6.png"/>
+				<s:Image id="skeleBSL7" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSL7.png"/>
+				<s:Image id="skeleBSR0" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR0.png"/>
+				<s:Image id="skeleBSR1" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR1.png"/>
+				<s:Image id="skeleBSR2" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR2.png"/>
+				<s:Image id="skeleBSR3" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR3.png"/>
+				<s:Image id="skeleBSR4" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR4.png"/>
+				<s:Image id="skeleBSR5" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR5.png"/>
+				<s:Image id="skeleBSR6" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR6.png"/>
+				<s:Image id="skeleBSR7" x="0" y="0" alpha="0" width="61" height="99" source="assets/skeleSR7.png"/>
+			</ICS4U:Skeleton>
+			<ICS4U:Chest id="chestM2L" x="1000" y="50" width="31" height="49" backgroundAlpha="0.0"
+						 borderVisible="false" health="0" mana="0" gold="500"
+						 alpha.Map1="0"
+						 y.Map2="1600"
+						 alpha.Map3="0">
+				<s:Image id="chestM2L0" x="0" y="0" width="33" height="50"
+						 source="assets/chestL0.png"/>
+				<s:Image id="chestM2L2" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestL2.png"/>
+				<s:Image id="chestM2L1" x="0" y="0" width="33" height="50" alpha="0"
+						 source="assets/chestL1.png"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestM2Scifi1" x="1000" y="50" width="57" height="54"
+						 boots="assets/boots1.png" gold="0" health="0" mana="0"
+						 alpha.Map1="0"
+						 x.Map2="2774" y.Map2="2117" backgroundAlpha.Map2="0.0"
+						 borderVisible.Map2="false"
+						 alpha.Map3="0">
+				<s:Image id="chestM2U0" x="0" y="0" width="50" height="50"
+						 source="assets/B-sci-fi chest0.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U1" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest1.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U2" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest2.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U3" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest3.png"
+						 width.Map2="50"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestM2Scifi2" x="1000" y="50" width="57" height="54"
+						 chestArmour="assets/chestA1.png" gold="0" health="0" mana="0"
+						 alpha.Map1="0"
+						 x.Map2="220" y.Map2="2117" backgroundAlpha.Map2="0.0"
+						 borderVisible.Map2="false"
+						 alpha.Map3="0">
+				<s:Image id="chestM2U20" x="0" y="0" width="50" height="50"
+						 source="assets/B-sci-fi chest0.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U21" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest1.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U22" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest2.png"
+						 width.Map2="50"/>
+				<s:Image id="chestM2U23" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/B-sci-fi chest3.png"
+						 width.Map2="50"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestM2Scifi5" includeIn="Map2" x="3349" y="1198" width="57"
+						 height="54" backgroundAlpha="0.0" borderVisible="false"
+						 ring="assets/ring1.png" gold="0" health="0" mana="0">
+				<s:Image id="chestM2U50" x="0" y="0" width="50" height="50"
+						 source="assets/G-sci-fi chest0.png"/>
+				<s:Image id="chestM2U51" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest1.png"/>
+				<s:Image id="chestM2U52" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest2.png"/>
+				<s:Image id="chestM2U53" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest3.png"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestM2Scifi3" includeIn="Map2" x="559" y="884" width="57"
+						 height="54" backgroundAlpha="0.0" borderVisible="false"
+						 weapon="assets/weapon1.png" gold="0" health="0" mana="0">
+				<s:Image id="chestM2U30" x="0" y="0" width="50" height="50"
+						 source="assets/Rscifi-chest0.png"/>
+				<s:Image id="chestM2U31" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/Rscifi-chest1.png"/>
+				<s:Image id="chestM2U32" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/Rscifi-chest2.png"/>
+				<s:Image id="chestM2U33" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/Rscifi-chest3.png"/>
+			</ICS4U:Chest>
+			<ICS4U:Chest id="chestM2Scifi4" includeIn="Map2" x="2426" y="186" width="57"
+						 height="54" backgroundAlpha="0.0" borderVisible="false"
+						 helmet="assets/robe1.png" gold="0" health="0" mana="0">
+				<s:Image id="chestM2U40" x="0" y="0" width="50" height="50"
+						 source="assets/G-sci-fi chest0.png"/>
+				<s:Image id="chestM2U41" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest1.png"/>
+				<s:Image id="chestM2U42" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest2.png"/>
+				<s:Image id="chestM2U43" x="0" y="0" width="50" height="50" alpha="0"
+						 source="assets/G-sci-fi chest3.png"/>
+			</ICS4U:Chest>
+			<s:BorderContainer id="ladder1M2" x="0" y="0" width="27" height="42" alpha="1" alpha.Map1="0"
+							   visible="false" x.Map2="1504" y.Map2="568" width.Map2="45"
+							   height.Map2="74" alpha.Map3="0">
+			</s:BorderContainer>
+			<s:BorderContainer id="ladder2M2" x="0" y="0" width="38" height="42" alpha="1" alpha.Map1="0"
+							   visible="false" x.Map2="4100" y.Map2="1150" width.Map2="47"
+							   height.Map2="54" alpha.Map3="0">
+			</s:BorderContainer>
+			<s:Label includeIn="Map2" x="1206" y="1592" width="41" height="47" color="#FFFE9B"
+					 fontSize="20" fontWeight="bold" text="!" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label includeIn="Map2" x="1813" y="1606" width="24" height="30" color="#FFFE9B"
+					 fontSize="20" fontWeight="bold" text="!" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:BorderContainer visible="true" width="191" height="148" backgroundAlpha="0.001"
+							   borderVisible="false" cornerRadius="20"
+							   x.Map1="0" y.Map1="0" alpha.Map1="0"
+							   x.Map2="0" y.Map2="0" alpha.Map2="0"
+							   x.Map3="2858" y.Map3="1742" width.Map3="148" alpha.Map3="1">
+				<s:BorderContainer id="blacksmithCollDetect" visible="false" width="191" height="139"
+								   borderVisible="false" cornerRadius="20"
+								   x.Map1="0" y.Map1="0" alpha.Map1="0"
+								   x.Map2="0" y.Map2="0" alpha.Map2="0"
+								   x.Map3="0" y.Map3="10" width.Map3="138" height.Map3="119"
+								   alpha.Map3="1">
+				</s:BorderContainer>
+				<s:Image id="blacksmith" width="100" height="80" horizontalCenter="0"
+						 source="assets/Blacksmith.png" verticalCenter="0"
+						 width.Map3="50" horizontalCenter.Map3="0" verticalCenter.Map3="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer visible="true" width="191" height="139" backgroundAlpha="0.001"
+							   borderVisible="false" cornerRadius="20"
+							   x.Map1="0" y.Map1="0" alpha.Map1="0"
+							   x.Map2="0" y.Map2="0" alpha.Map2="0"
+							   x.Map3="1016" y.Map3="1630" width.Map3="148" alpha.Map3="1">
+				<s:BorderContainer id="chefCollDetect" visible="false" width="191" height="139"
+								   borderVisible="false" cornerRadius="20"
+								   x.Map1="0" y.Map1="0" alpha.Map1="0"
+								   x.Map2="0" y.Map2="0" alpha.Map2="0"
+								   x.Map3="0" y.Map3="10" width.Map3="138" height.Map3="119"
+								   alpha.Map3="1">
+				</s:BorderContainer>
+				<s:Image id="chef" width="100" height="80" horizontalCenter="0"
+						 source="assets/chef.png" verticalCenter="0"
+						 width.Map3="50" horizontalCenter.Map3="0" verticalCenter.Map3="0"/>
+			</s:BorderContainer>
+			<s:Label id="girlChatBox" height="18" alpha="0" backgroundColor="#FFFFFF" color="#000000"
+					 fontWeight="bold" textAlign="center" verticalAlign="middle"
+					 x.Map1="0" y.Map1="0"
+					 x.Map2="0" y.Map2="0"
+					 x.Map3="1590" y.Map3="1760"/>
+			<s:BorderContainer visible="true" width="191" height="139" backgroundAlpha="0.001"
+							   borderVisible="false" cornerRadius="20"
+							   x.Map1="0" y.Map1="0" alpha.Map1="0"
+							   x.Map2="0" y.Map2="0" alpha.Map2="0"
+							   x.Map3="1540" y.Map3="1750" width.Map3="148" alpha.Map3="1">
+				<s:BorderContainer id="girlCollDetect" visible="false" width="191" height="139"
+								   borderVisible="false" cornerRadius="20"
+								   x.Map1="0" y.Map1="0" alpha.Map1="0"
+								   x.Map2="0" y.Map2="0" alpha.Map2="0"
+								   x.Map3="0" y.Map3="10" width.Map3="138" height.Map3="119"
+								   alpha.Map3="1">
+				</s:BorderContainer>
+				<s:Image id="girl" width="100" height="60" horizontalCenter="0"
+						 source="assets/girl.png" verticalCenter="0"
+						 width.Map3="50" horizontalCenter.Map3="0" verticalCenter.Map3="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer id="goMap1" includeIn="Map2" x="1499" y="1851" width="49" height="47"
+							   backgroundAlpha="0.01" borderVisible="false" color="#000000">
+			</s:BorderContainer>
+			<s:BorderContainer id="returnMap1" includeIn="Map1" x="876" y="1706" width="50"
+							   height="50" backgroundAlpha="0.1" borderVisible="false">
+			</s:BorderContainer>
+			<s:BorderContainer id="safeZone" includeIn="Map3" x="917" y="1551" width="2126"
+							   height="474" backgroundAlpha="0.01" borderVisible="false">
+			</s:BorderContainer>
+			<s:BorderContainer id="mBoss" includeIn="Map2" x="3236" y="177" width="1682"
+							   height="2101" backgroundAlpha="0.01" borderVisible="false">
+			</s:BorderContainer>
+			<s:BorderContainer id="goMap2" includeIn="Map3" x="370" y="1063" width="64" height="124"
+							   backgroundAlpha="0.01" borderVisible="false">
+			</s:BorderContainer>
+			<s:BorderContainer id="returnMap2" includeIn="Map2" x="4797" y="1167" width="57"
+							   height="120" backgroundAlpha="0.01" borderVisible="false">
+			</s:BorderContainer>
+		</s:BorderContainer>
+		<s:BorderContainer id="riku" x="450" y="270" width="34" height="63" backgroundAlpha="0.0"
+						   borderVisible="false"
+						   x.Map3="450">
+			<s:Image id="rikuD0" x="0" y="-6" width="34" height="63" alpha="1"
+					 source="assets/rikuD.png"/>
+			<s:Image id="rikuD1" x="0" y="-4" width="33" height="61" alpha="0"
+					 source="assets/rikuD1.png"/>
+			<s:Image id="rikuD2" x="0" y="6" width="32" height="51" alpha="0"
+					 source="assets/rikuD2.png"/>
+			<s:Image id="rikuD3" x="0" y="2" width="30" height="55" alpha="0"
+					 source="assets/rikuD3.png"/>
+			<s:Image id="rikuD4" x="0" y="-1" width="33" height="58" alpha="0"
+					 source="assets/rikuD4.png"/>
+			<s:Image id="rikuD5" x="0" y="5" width="30" height="52" alpha="0"
+					 source="assets/rikuD5.png"/>
+			<s:Image id="rikuD6" x="0" y="10" width="30" height="47" alpha="0"
+					 source="assets/rikuD6.png"/>
+			<s:Image id="rikuD7" x="0" y="2" width="36" height="55" alpha="0"
+					 source="assets/rikuD7.png"/>
+			<s:Image id="rikuD8" x="0" y="-3" width="34" height="56" alpha="0"
+					 source="assets/rikuD8.png"/>
+			<s:Image id="rikuL0" x="-6" y="-6" width="24" height="59" alpha="0"
+					 source="assets/rikuL.png"/>
+			<s:Image id="rikuL1" x="-6" y="0" width="56" height="58" alpha="0"
+					 source="assets/rikuL1.png"/>
+			<s:Image id="rikuL2" x="-6" y="0" width="59" height="53" alpha="0"
+					 source="assets/rikuL2.png"/>
+			<s:Image id="rikuL3" x="-6" y="0" width="46" height="54" alpha="0"
+					 source="assets/rikuL3.png"/>
+			<s:Image id="rikuL4" x="-6" y="0" width="43" height="52" alpha="0"
+					 source="assets/rikuL4.png"/>
+			<s:Image id="rikuL5" x="-6" y="0" width="63" height="58" alpha="0"
+					 source="assets/rikuL5.png"/>
+			<s:Image id="rikuL6" x="-6" y="0" width="64" height="52" alpha="0"
+					 source="assets/rikuL6.png"/>
+			<s:Image id="rikuL7" x="-6" y="0" width="51" height="51" alpha="0"
+					 source="assets/rikuL7.png"/>
+			<s:Image id="rikuL8" x="-6" y="0" width="42" height="52" alpha="0"
+					 source="assets/rikuL8.png"/>
+			<s:Image id="rikuR0" x="4" y="-6" width="24" height="59" alpha="0"
+					 source="assets/rikuR.png"/>
+			<s:Image id="rikuR1" x="0" y="0" width="42" height="51" alpha="0"
+					 source="assets/rikuR1.png"/>
+			<s:Image id="rikuR2" x="0" y="0" width="49" height="52" alpha="0"
+					 source="assets/rikuR2.png"/>
+			<s:Image id="rikuR3" x="0" y="0" width="63" height="50" alpha="0"
+					 source="assets/rikuR3.png"/>
+			<s:Image id="rikuR4" x="0" y="0" width="59" height="56" alpha="0"
+					 source="assets/rikuR4.png"/>
+			<s:Image id="rikuR5" x="0" y="0" width="42" height="51" alpha="0"
+					 source="assets/rikuR5.png"/>
+			<s:Image id="rikuR6" x="0" y="0" width="46" height="51" alpha="0"
+					 source="assets/rikuR6.png"/>
+			<s:Image id="rikuR7" x="0" y="0" width="59" height="53" alpha="0"
+					 source="assets/rikuR7.png"/>
+			<s:Image id="rikuR8" x="0" y="0" width="57" height="53" alpha="0"
+					 source="assets/rikuR8.png"/>
+			<s:Image id="rikuU0" x="0" y="0" width="34" height="63" alpha="0"
+					 source="assets/rikuU.png"/>
+			<s:Image id="rikuU1" x="0" y="0" width="29" height="65" alpha="0"
+					 source="assets/rikuU1.png"/>
+			<s:Image id="rikuU2" x="0" y="0" width="31" height="53" alpha="0"
+					 source="assets/rikuU2.png"/>
+			<s:Image id="rikuU3" x="0" y="0" width="30" height="60" alpha="0"
+					 source="assets/rikuU3.png"/>
+			<s:Image id="rikuU4" x="0" y="0" width="29" height="64" alpha="0"
+					 source="assets/rikuU4.png"/>
+			<s:Image id="rikuU5" x="0" y="0" width="29" height="57" alpha="0"
+					 source="assets/rikuU5.png"/>
+			<s:Image id="rikuU6" x="0" y="0" width="27" height="52" alpha="0"
+					 source="assets/rikuU6.png"/>
+			<s:Image id="rikuU7" x="0" y="0" width="31" height="57" alpha="0"
+					 source="assets/rikuU7.png"/>
+			<s:Image id="rikuU8" x="0" y="0" width="29" height="63" alpha="0"
+					 source="assets/rikuU8.png"/>
+			<s:Image  id="rikuAD1" x="-13" y="-22" source="assets/rikuStrikeD1.png.gif" alpha="0"/>
+			<s:Image  id="rikuAD2" x="-13" y="-22" source="assets/rikuStrikeD2.png.gif" alpha="0"/>
+			<s:Image  id="rikuAD3" x="-13" y="-22" source="assets/rikuStrikeD3.png.gif" alpha="0"/>
+			<s:Image  id="rikuAD4" x="-13" y="-22" source="assets/rikuStrikeD4.png.gif" alpha="0"/>
+			<s:Image  id="rikuAD5" x="-13" y="-22" source="assets/rikuStrikeD5.png.gif" alpha="0"/>
+			<s:Image  id="rikuAU1" x="2" y="-17" source="assets/rikuAU1.png.gif" alpha="0"/>
+			<s:Image  id="rikuAU2" x="2" y="-17" source="assets/rikuAU2.png.gif" alpha="0"/>
+			<s:Image  id="rikuAU3" x="2" y="-17" source="assets/rikuAU3.png.gif" alpha="0"/>
+			<s:Image  id="rikuAU4" x="2" y="-17" source="assets/rikuAU4.png.gif" alpha="0"/>
+			<s:Image  id="rikuAU5" x="2" y="-17" source="assets/rikuAU5.png.gif" alpha="0"/>
+			<s:Image  id="rikuAL1" x="-2" y="-20" source="assets/rikuAL1.png.gif" alpha="0"/>
+			<s:Image  id="rikuAL2" x="-3" y="-20" source="assets/rikuAL2.png.gif" alpha="0"/>
+			<s:Image  id="rikuAL3" x="-4" y="-20" source="assets/rikuAL3.png.gif" alpha="0"/>
+			<s:Image  id="rikuAL4" x="-5" y="-20" source="assets/rikuAL4.png.gif" alpha="0"/>
+			<s:Image  id="rikuAL5" x="-6" y="-20" source="assets/rikuAL5.png.gif" alpha="0"/>
+			<s:Image  id="rikuAR1" x="2" y="-20" source="assets/rikuAR1.png.gif" alpha="0"/>
+			<s:Image  id="rikuAR2" x="3" y="-20" source="assets/rikuAR2.png.gif" alpha="0"/>
+			<s:Image  id="rikuAR3" x="4" y="-20" source="assets/rikuAR3.png.gif" alpha="0"/>
+			<s:Image  id="rikuAR4" x="5" y="-20" source="assets/rikuAR4.png.gif" alpha="0"/>
+			<s:Image  id="rikuAR5" x="6" y="-20" source="assets/rikuAR5.png.gif" alpha="0"/>
+		</s:BorderContainer>
+		<s:BorderContainer id="Dodging" x="450" y="270" width="34" height="63" backgroundAlpha="0.0"
+						   borderVisible="false">
+			<s:Image id="dodge1" x="-45" y="-8" alpha="0" source="assets/Dodge1.png"/>
+			<s:Image id="dodge2" x="-45" y="-8" alpha="0" source="assets/Dodge2.png"/>
+		</s:BorderContainer>
+		<s:Label id="objRec1" x="393" y="195" height="18" alpha="0" color="#FFFFFF" fontWeight="bold"
+				 textAlign="center" verticalAlign="middle"
+				 x.Map1="393"
+				 x.Map2="393"/>
+		<s:Label id="objRec2" x="393" y="199" height="18" alpha="0" color="#FFFFFF" fontWeight="bold"
+				 textAlign="center" verticalAlign="middle"
+				 x.Map1="393"
+				 x.Map2="393"/>
+		<s:Label id="noObjRec" x="393" y="195" height="18" alpha="0" color="#FFFFFF"
+				 fontWeight="bold" text="No interactable object found" textAlign="center"
+				 verticalAlign="middle"/>
+		<!--Heads-upDisplayArea-->
+		<s:BorderContainer id="HUD" left="20" top="20" width="364" height="150" backgroundAlpha="0.3"
+						   backgroundColor="#000000" borderAlpha="1.0" borderColor="#000000"
+						   borderVisible="false">
+			<s:BorderContainer right="9" top="10" width="222" height="45" backgroundAlpha="1.0"
+							   backgroundColor="#000000" borderColor="#000000" borderVisible="true"
+							   borderWeight="0" cornerRadius="0" skinClass="com.ICS4U.CanvasSkin">
+				<s:Image left="3" top="0" width="215" height="50" scaleX="1"
+						 source="assets/healthBarBG.png"/>
+				<s:Image id="healthBar" left="3" top="-3" width="215" height="50" scaleX="1"
+						 source="assets/healthBar.png"/>
+			</s:BorderContainer>
+			<s:BorderContainer right="9" width="222" height="45" backgroundAlpha="1.0"
+							   backgroundColor="#000000" borderColor="#000000" borderVisible="true"
+							   borderWeight="0" cornerRadius="0" skinClass="com.ICS4U.CanvasSkin"
+							   verticalCenter="1">
+				<s:Image y="-3" left="3" width="215" height="50" source="assets/manaBarBG.png"/>
+				<s:Image id="manaBar" left="3" top="-6" width="215" height="50"
+						 source="assets/manaBar.png"/>
+			</s:BorderContainer>
+			<s:BorderContainer right="9" bottom="10" width="222" height="45" backgroundAlpha="1.0"
+							   backgroundColor="#000000" borderColor="#000000" borderVisible="true"
+							   borderWeight="0" cornerRadius="0" skinClass="com.ICS4U.CanvasSkin">
+				<s:Image y="-2" left="3" width="215" height="50" source="assets/staminaBarBG.png"/>
+				<s:Image id="staminaBar" left="3" top="-4" width="215" height="50"
+						 source="assets/staminaBar.png"/>
+			</s:BorderContainer>
+			<s:Image left="0" width="125" height="150" backgroundAlpha="0.0"
+					 backgroundColor="#000000" source="assets/Protag.png" verticalCenter="0"/>
+			<s:Label x="68" y="135" color="#FFFFFF" fontWeight="bold" text="Level :" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="rikuLvl" x="110" y="135" color="#FFFFFF" fontWeight="bold" text="1"
+					 textAlign="center" verticalAlign="middle"/>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	<!--Inventory&EquipmentArea-->
+	<s:BorderContainer id="invtPage" includeIn="Map1, Map2, Map3" width="955" height="600" alpha="0"
+					   backgroundAlpha="0.0" borderVisible="false" horizontalCenter="1300"
+					   verticalCenter="0">
+		<s:BorderContainer left="30" width="346" height="256" backgroundColor="#7C7772"
+						   borderColor="#000000" borderWeight="6" verticalCenter="30"
+						   left.Map1="30" verticalCenter.Map1="30">
+			<s:Image y="71" width="62" height="101" horizontalCenter="0" source="assets/rikuD.png"/>
+			<s:BorderContainer width="60" height="55" backgroundAlpha="0.0"
+							   borderColor="#000000" borderWeight="1" horizontalCenter="-80"
+							   verticalCenter="-30">
+				<s:Image id="chestPiece" y="0" horizontalCenter="0"
+						 source="assets/chestA1.png" width="58" height="53" alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer width="60" height="55" borderColor="#000000" borderWeight="1"
+							   horizontalCenter="80" verticalCenter="-30"
+							   backgroundAlpha="0.0">
+				<s:Image id="sword" y="0" horizontalCenter="0"
+						 source="assets/weapon1.png" width="58" height="53" alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer width="60" height="55" backgroundAlpha="0.0"
+							   borderColor="#000000" borderWeight="1" horizontalCenter="0"
+							   verticalCenter="-90">
+				<s:Image id="helmetPiece" y="0" horizontalCenter="0"
+						 source="assets/robe1.png" width="58" height="53" alpha="0"/>
+			</s:BorderContainer>
+			
+			<s:BorderContainer width="60" height="55" backgroundAlpha="0.0"
+							   borderColor="#000000" borderWeight="1" horizontalCenter="-80"
+							   verticalCenter="30">
+				<s:Image id="bootsPiece" y="0" horizontalCenter="0"
+						 source="assets/boots1.png" width="58" height="53" alpha="0"/>
+			</s:BorderContainer>
+			
+			<s:BorderContainer width="60" height="55" backgroundAlpha="0.0"
+							   borderColor="#000000" borderWeight="1" horizontalCenter="80"
+							   verticalCenter="30">
+				<s:Image id="ringPiece" y="0" horizontalCenter="0"
+						 source="assets/ring1.png" width="58" height="53" alpha="0"/>
+			</s:BorderContainer>
+			<s:Label x="5" y="182" fontFamily="Arial" fontWeight="bold" text="Experience :"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label id="curr" x="269" y="206" fontWeight="bold" text="0" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Image x="217" y="187" width="43" height="47" source="assets/coins.png"/>
+			<s:Label id="expPoints" x="90" y="183" fontWeight="bold" text="0" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label id="maxExp" x="113" y="183" fontWeight="bold" text="100"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="105" y="183" fontWeight="bold" text="/" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Image x="4" y="194" width="25" height="30"
+					 source="assets/atkStats.png"/>
+			<s:Label id="atkStats" x="37" y="202" color="#FF0000" fontWeight="bold"
+					 textAlign="center" verticalAlign="middle"
+					 text="10"/>
+			<s:Image x="4" y="214" width="25" height="30"
+					 source="assets/spdStats.png"/>
+			<s:Label id="spdStats" x="37" y="222" color="#FFFFFF" fontWeight="bold"
+					 text="15" textAlign="center" verticalAlign="middle"/>
+			<s:Image x="80" y="210" width="25" height="30"
+					 source="assets/armorStats.png"/>
+			<s:Label id="armorStats" x="113" y="222" color="#C8C7C7" fontStyle="normal"
+					 fontWeight="bold" text="5" textAlign="center" verticalAlign="middle"/>
+		</s:BorderContainer>
+		<s:BorderContainer right="49" width="349" height="256" backgroundColor="#7C7772"
+						   borderColor="#000000" borderWeight="6" verticalCenter="30">
+			<s:BorderContainer left="20" top="10" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot1" x="0" y="0" width="60" height="55" alpha="0" horizontalCenter="0"
+						 source="assets/hpPot.png" verticalCenter="0"/>
+				<s:Label id="hpPotVal" x="45" y="43" color="#FFFFFF" fontWeight="bold" text="0"
+						 verticalAlign="middle" alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="80" top="10" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot2" x="0" y="0" width="60" height="55" alpha="0" horizontalCenter="0"
+						 source="assets/manaPot.png" verticalCenter="0"/>
+				<s:Label id="manaPotVal" x="45" y="43" color="#FFFFFF" fontWeight="bold" text="0"
+						 verticalAlign="middle" alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="140" top="10" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot3" x="0" y="0" width="60" height="55" alpha="0" horizontalCenter="0"
+						 source="assets/staminaPot.png" verticalCenter="0"/>
+				<s:Label id="staminaPotVal" x="45" y="43" color="#FFFFFF" fontWeight="bold" text="0"
+						 verticalAlign="middle" alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="200" top="10" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot4" width="60" height="55" alpha="0"
+						 x.Map1="0" y.Map1="0"
+						 horizontalCenter="0" verticalCenter="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="260" top="10" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot5" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="20" top="65" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot6" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="80" top="65" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot7" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="140" top="65" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot8" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="200" top="65" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot9" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer id="slot10" left="260" top="65" width="60" height="55"
+							   borderColor="#000000" borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="20" top="120" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot11" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="80" top="120" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot12" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="140" top="120" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot13" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="200" top="120" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot14" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="260" top="120" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot15" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer id="slot16" left="20" top="175" width="60" height="55"
+							   borderColor="#000000" borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="80" top="175" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot17" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="140" top="175" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot18" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="200" top="175" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot19" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+			<s:BorderContainer left="260" top="175" width="60" height="55" borderColor="#000000"
+							   borderVisible="true"
+							   backgroundAlpha="0.0">
+				<s:Image id="slot20" width="60" height="55" horizontalCenter="0" verticalCenter="0"
+						 alpha="0"/>
+			</s:BorderContainer>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	<!--PauseArea-->
+	<s:BorderContainer id="pausePage" includeIn="Map1, Map2, Map3" width="955" height="600" alpha="0"
+					   backgroundAlpha="0.8" backgroundColor="#000000" borderVisible="false"
+					   horizontalCenter="-955" verticalCenter="0">
+		<s:BorderContainer width="385" height="339" backgroundAlpha="0.0" borderVisible="false"
+						   horizontalCenter="0" verticalCenter="0">
+			<s:Image top="70" click="resumeGame();" horizontalCenter="0" source="assets/Res.png"/>
+			<s:Image bottom="70" click="reset();" horizontalCenter="0" source="assets/MM.png"/>
+		</s:BorderContainer>
+	</s:BorderContainer>
+	<s:BorderContainer includeIn="Instructions" width="954" height="600" backgroundAlpha="0.0"
+					   borderVisible="false" horizontalCenter="0" lineThrough="true"
+					   verticalCenter="0">
+		<s:Image horizontalCenter="0" source="assets/shield.png" verticalCenter="0"/>
+		<s:BorderContainer top="20" width="835" height="489" backgroundAlpha="0.0"
+						   borderVisible="false" horizontalCenter="0">
+			<s:Image y="90" right="36" source="assets/0.png"/>
+			<s:Image left="40" source="assets/i.png" verticalCenter="70"/>
+			<s:Image horizontalCenter="0" source="assets/k.png" verticalCenter="70"/>
+			<s:Image left="40" top="40" source="assets/wasd.png"/>
+			<s:Image right="40" source="assets/1.png" verticalCenter="-20"/>
+			<s:Image right="40" source="assets/2.png" verticalCenter="70"/>
+			<s:Image left="40" source="assets/e.png" verticalCenter="-20"/>
+			<s:Image bottom="40" horizontalCenter="0" source="assets/spacebar.png"/>
+			<s:Label x="167" y="66" width="195" color="#FBFBFB" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="&lt;-- Maneuver Character"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="440" y="303" width="133" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="&lt;-- Attack" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label x="618" y="93" width="122" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="Stamina Potion --&gt;" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label x="615" y="213" width="129" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="Health --&gt; &#xd;Potion"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="627" y="305" width="119" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="Mana --&gt;&#xd;Potion"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="94" y="306" width="161" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="&lt;-- Inventory"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="90" y="216" width="149" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="&lt;-- Interact"
+					 textAlign="center" verticalAlign="middle"/>
+			<s:Label x="438" y="191" width="135" color="#FFFFFF" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" lineThrough="false" text="&lt;-- Pause" textAlign="center"
+					 verticalAlign="middle"/>
+			<s:Label y="403" width="120" color="#FBFBFB" fontFamily="Verdana" fontSize="20"
+					 fontWeight="bold" horizontalCenter="230" lineThrough="false"
+					 text="&lt;-- Dodge" textAlign="center" verticalAlign="middle"/>
+			<s:Image horizontalCenter="0" source="assets/p.png" verticalCenter="-50"/>
+		</s:BorderContainer>
+		<s:Image bottom="40" click="chgScreen('MainMenu');" horizontalCenter="0" smooth="true"
+				 smoothingQuality="high" source="assets/Ret.png"/>
+	</s:BorderContainer>
+	<s:Image includeIn="WinScreen" width="956" height="762" horizontalCenter="0"
+			 source="assets/windis.jpg" verticalCenter="0"/>
+	<s:Label includeIn="WinScreen" width="691" height="145" color="#FFFFFF" fontSize="36"
+			 fontWeight="bold" horizontalCenter="0" text="You Win!!!" textAlign="center"
+			 verticalAlign="middle" verticalCenter="0"/>
+</s:Application>
